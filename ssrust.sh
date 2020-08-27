@@ -5,14 +5,12 @@ green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
 TMP_DIR="$(mktemp -du)"
+link=https://github.com/shadowsocks/shadowsocks-rust/releases/latest/download/shadowsocks-$latest.x86_64-unknown-linux-gnu.tar.xz
+latest=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest | grep 'tag_name' | cut -d\" -f4)
 
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
 
 check_ss(){
-    echo -e "[${green}Info${plain}] 开始安装${yellow} Shadowsocks-rust${plain}"
-    latest=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest | grep 'tag_name' | cut -d\" -f4)
-    [ -z "${latest}" ] && echo -e "[${red}Error${plain}] 获取失败！" && exit 1
-    link=https://github.com/shadowsocks/shadowsocks-rust/releases/download/$latest/shadowsocks-$latest.x86_64-unknown-linux-gnu.tar.xz
     if command -v "ssserver" > /dev/null 2>&1 ;then
         get_update
     fi
@@ -24,6 +22,12 @@ config_ss(){
     read -r port
     echo -e -n "[${green}Info${plain}] 输入密码："
     read -r passwd
+    set_ss
+    set_service
+    set_bbr
+}
+
+set_ss(){
     cat > /etc/shadowsocks-rust/config.json<<-EOF
 {
     "server":"::",
@@ -36,18 +40,33 @@ config_ss(){
 EOF
 }
 
+set_service(){
+    cat > /etc/systemd/system/shadowsocks.service<<-EOF
+[Unit]
+Description=ss Service
+After=network.target
+[Service]
+Type=simple
+User=nobody
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+ExecStart=/usr/local/bin/ssserver -c /etc/shadowsocks-rust/config.json
+ExecStop=/usr/bin/killall ssserver
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
 install_ss(){
     check_ss
     mkdir "$TMP_DIR"
     cd "$TMP_DIR" || exit 1
-    config_ss
+    echo -e "[${green}Info${plain}] 开始安装${yellow}Shadowsocks-rust${plain}"
     wget -cO ss.tar.xz https://api.azzb.workers.dev/"$link"
-    wget -cq https://cdn.jsdelivr.net/gh/771073216/azzb@master/shadowsocks.service
-    install -m 644 "shadowsocks.service" /etc/systemd/system/
     tar --no-same-owner -xf ss.tar.xz -C /usr/local/bin/
-    systemctl enable shadowsocks --now
     rm -rf "$TMP_DIR"
-    config_bbr
+    config_ss
+    systemctl enable shadowsocks --now
     echo -e "[${green}Info${plain}] 完成安装！"
 }
 
@@ -58,18 +77,18 @@ get_update(){
     if [ "${latest}" == "${current}" ]; then
         echo -e "[${green}Info${plain}] 已安装最新版本${green}${latest}${plain}"
     else
-        echo -e "[${green}Info${plain}] 当前版本：${red}${current}${plain}"
-        echo -e "[${green}Info${plain}] 最新版本：${red}${latest}${plain}"
-        echo -e "[${green}Info${plain}] 正在更新${yellow}Shadowsocks-rust${plain}..."
+        echo -ne "[${green}Info${plain}] 正在更新${yellow}Shadowsocks-rust${plain}"
+        echo -e " ${red}${current}${plain} --> ${green}${latest}${plain}"
         wget -cO ss.tar.xz https://api.azzb.workers.dev/"$link"
         tar --no-same-owner -xf ss.tar.xz -C /usr/local/bin/
         systemctl restart shadowsocks
     fi
     rm -rf "$TMP_DIR"
+    echo -e "[${green}Info${plain}] 更新完成！"
     exit 0
 }
 
-config_bbr() {
+set_bbr() {
     echo -e "[${green}Info${plain}] 设置bbr..."
     sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
     sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
@@ -93,11 +112,11 @@ uninstall_ss(){
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-    install|uninstall|config)
+    install|uninstall)
     ${action}_ss
     ;;
     *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|uninstall|config]"
+    echo "使用方法：$(basename "$0") [install|uninstall]"
     ;;
 esac
