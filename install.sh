@@ -51,8 +51,9 @@ config_v2ray(){
     set_service
     set_bbr
     systemctl daemon-reload
-    systemctl enable v2ray --now
-    systemctl enable tls-shunt-proxy --now
+    systemctl restart v2ray
+    systemctl restart tls-shunt-proxy
+    info_v2ray
 }
 
 set_v2(){
@@ -145,7 +146,8 @@ install_v2ray(){
     if [ "$v2" -eq 0 ] ;then
     install_file
     config_v2ray
-    info_v2ray
+    systemctl enable v2ray --now
+    systemctl enable tls-shunt-proxy --now
     else
     update_v2ray
     update_tsp
@@ -162,7 +164,9 @@ install_file(){
     unzip -oq "tls-shunt-proxy-linux-amd64.zip"
     install -m 755 "v2ray" "v2ctl" /usr/local/bin/
     install -m 755 "tls-shunt-proxy" /usr/local/bin/
-    [[ -z $(id tls-shunt-proxy >/dev/null 2>&1) ]] && useradd tls-shunt-proxy -s /usr/sbin/nologin
+    if [ -z "$(id tls-shunt-proxy >/dev/null 2>&1)" ] ;then
+    useradd tls-shunt-proxy -s /usr/sbin/nologin
+    fi
     install -d -o tls-shunt-proxy -g tls-shunt-proxy /etc/ssl/tls-shunt-proxy/
     echo -e "[${green}Info${plain}] V2Ray完成安装！"
 }
