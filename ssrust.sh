@@ -82,9 +82,9 @@ get_update(){
         wget -cO ss.tar.xz https://api.azzb.workers.dev/"$link"
         tar --no-same-owner -xf ss.tar.xz -C /usr/local/bin/
         systemctl restart shadowsocks
+        echo -e "[${green}Info${plain}] 更新完成！"
     fi
     rm -rf "$TMP_DIR"
-    echo -e "[${green}Info${plain}] 更新完成！"
     exit 0
 }
 
