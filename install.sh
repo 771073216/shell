@@ -157,8 +157,8 @@ install_v2ray(){
 
 install_file(){
     echo -e "[${green}Info${plain}] 开始安装${yellow}V2Ray with TCP + TLS + Domain Socket${plain}"
-    wget -cq "https://api.azzb.workers.dev/$v2link"
-    wget -cq "https://api.azzb.workers.dev/$tsplink"
+    wget -c "https://api.azzb.workers.dev/$v2link"
+    wget -c "https://api.azzb.workers.dev/$tsplink"
     wget -qP /etc/systemd/system/ 'https://cdn.jsdelivr.net/gh/liberal-boy/tls-shunt-proxy@master/dist/tls-shunt-proxy.service'
     unzip -oq "v2ray-linux-64.zip"
     unzip -oq "tls-shunt-proxy-linux-amd64.zip"
@@ -182,7 +182,7 @@ update_v2ray(){
         echo -e "[${green}Info${plain}] 当前版本：${red}${v2current}${plain}"
         echo -e "[${green}Info${plain}] 最新版本：${red}${v2latest}${plain}"
         echo -e "[${green}Info${plain}] 正在更新${yellow}v2ray${plain}..."
-        wget -cq "https://api.azzb.workers.dev/$v2link"
+        wget -c "https://api.azzb.workers.dev/$v2link"
         unzip -oq "v2ray-linux-64.zip"
         install -m 755 "v2ray" "v2ctl" /usr/local/bin/
         systemctl restart v2ray
@@ -201,7 +201,7 @@ update_tsp(){
         echo -e "[${green}Info${plain}] 当前版本：${red}${tspcurrent}${plain}"
         echo -e "[${green}Info${plain}] 最新版本：${red}${tsplatest}${plain}"
         echo -e "[${green}Info${plain}] 正在更新${yellow}tls-shunt-proxy${plain}..."
-        wget -cq "https://api.azzb.workers.dev/$tsplink"
+        wget -c "https://api.azzb.workers.dev/$tsplink"
         unzip -oq "tls-shunt-proxy-linux-amd64.zip"
         install -m 755 "tls-shunt-proxy" /usr/local/bin/
         systemctl restart tls-shunt-proxy
