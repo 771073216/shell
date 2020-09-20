@@ -7,6 +7,7 @@ TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 v2link=https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
+ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 
 check_v2() {
   if command -v "v2ray" >/dev/null 2>&1; then
@@ -30,11 +31,8 @@ config_v2ray() {
   unzip -oq "html.zip" -d '/var/www'
   echo -e -n "[${green}Info${plain}] 输入域名： "
   read -r domain
-  echo -e -n "[${green}Info${plain}] 输入path： "
-  read -r h2path
   install -d /usr/local/etc/v2ray/
   set_v2
-  set_caddy
   set_bbr
 }
 
@@ -43,29 +41,39 @@ set_v2() {
 {
     "inbounds": [
         {
-            "protocol": "vmess",
-            "listen": "127.0.0.1",
-            "port": 2001,
+            "port": 443,
+            "protocol": "vless",
             "settings": {
                 "clients": [
                     {
                         "id": "${uuid}"
                     }
+                ],
+                "decryption": "none",
+                "fallbacks": [
+                    {
+                        "dest": 80
+                    }
                 ]
             },
             "streamSettings": {
-        "security": "none",
-        "network": "h2",
-        "httpSettings": {
-          "path": "/${h2path}",
-          "host": [
-            "${domain}"
-          ]
-        }
-      }
+                "network": "tcp",
+                "security": "tls",
+                "tlsSettings": {
+                    "alpn": [
+                        "http/1.1"
+                    ],
+                    "certificates": [
+                        {
+                            "certificateFile": "${ssl_dir}${domain}/${domain}.crt",
+                            "keyFile": "${ssl_dir}${domain}/${domain}.key"
+                        }
+                    ]
+                }
+            }
         }
     ],
-	"outbounds": [
+    "outbounds": [
         {
             "protocol": "freedom"
         }
@@ -76,14 +84,9 @@ EOF
 
 set_caddy() {
   cat >/etc/caddy/caddyfile <<-EOF
-${domain} {
+${domain}:80 {
     root * /var/www
     file_server
-    reverse_proxy /${h2path} 127.0.0.1:2001 {
-        transport http {
-            versions h2c
-        }
-    }
 }
 EOF
 }
@@ -105,9 +108,8 @@ update_v2ray() {
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}已安装最新版本${green}${v2latest}${plain}。"
   else
     echo -e "[${green}Info${plain}] 正在更新${yellow}V2Ray${plain}：${red}${v2current}${plain} --> ${green}${v2latest}${plain}"
-    wget -c "https://api.azzb.workers.dev/$v2link"
-    unzip -q "v2ray-linux-64.zip"
-    install -m 755 "v2ray" "v2ctl" /usr/local/bin/
+    install_file
+    systemctl daemon-reload
     systemctl restart v2ray
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}更新成功！"
   fi
@@ -115,22 +117,32 @@ update_v2ray() {
   exit 0
 }
 
-install_v2ray() {
-  pre_install
-  check_v2
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  wget -c "https://api.azzb.workers.dev/$v2link"
-  unzip -jq "v2ray-linux-64.zip"
-  install -m 755 "v2ray" "v2ctl" /usr/local/bin/
-  install -m 644 "v2ray.service" /etc/systemd/system/
+install_caddy() {
   if ! command -v "caddy" >/dev/null 2>&1; then
     echo "deb [trusted=yes] https://apt.fury.io/caddy/ /" >/etc/apt/sources.list.d/caddy-fury.list
     apt update && apt install caddy
   fi
+  set_caddy
+  systemctl restart caddy
+}
+
+install_file() {
+  wget -c "https://api.azzb.workers.dev/$v2link"
+  unzip -jq "v2ray-linux-64.zip"
+  sed -i s/nobody/caddy/g "v2ray.service"
+  install -m 755 "v2ray" "v2ctl" /usr/local/bin/
+  install -m 644 "v2ray.service" /etc/systemd/system/
+}
+
+install_v2ray() {
+  pre_install
+  check_v2
+  install_caddy
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
+  install_file
   config_v2
   rm -rf "$TMP_DIR"
-  systemctl restart caddy
   systemctl enable v2ray --now
   info_v2ray
 }
