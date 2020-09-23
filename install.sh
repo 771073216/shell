@@ -175,15 +175,13 @@ install_file() {
 
 update_v2ray() {
   echo -e "[${green}Info${plain}] 获取${yellow}v2ray${plain}版本信息..."
-  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | grep 'tag_name' | cut -d\" -f4)
+  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
   [ -z "${v2latest}" ] && echo -e "[${red}Error${plain}] 获取失败！" && exit 1
-  v2current=v$(/usr/local/bin/v2ray -version | grep V2Ray | cut -d' ' -f2)
+  v2current=v$(/usr/local/bin/v2ray -version | awk 'NR==1 {print $2}')
   if [ "${v2latest}" == "${v2current}" ]; then
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}已安装最新版本${green}${v2latest}${plain}。"
   else
-    echo -e "[${green}Info${plain}] 当前版本：${red}${v2current}${plain}"
-    echo -e "[${green}Info${plain}] 最新版本：${red}${v2latest}${plain}"
-    echo -e "[${green}Info${plain}] 正在更新${yellow}v2ray${plain}..."
+    echo -e "[${green}Info${plain}] 正在更新${yellow}V2Ray${plain}：${red}${v2current}${plain} --> ${green}${v2latest}${plain}"
     wget -c "https://api.azzb.workers.dev/$v2link"
     unzip -oq "v2ray-linux-64.zip"
     install -m 755 "v2ray" "v2ctl" /usr/local/bin/
@@ -194,15 +192,13 @@ update_v2ray() {
 
 update_tsp() {
   echo -e "[${green}Info${plain}] 获取${yellow}tls-shunt-proxy${plain}版本信息..."
-  tsplatest=$(wget -qO- "https://api.github.com/repos/liberal-boy/tls-shunt-proxy/releases/latest" | grep 'tag_name' | cut -d\" -f4)
+  tsplatest=$(wget -qO- "https://api.github.com/repos/liberal-boy/tls-shunt-proxy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
   [ -z "${tsplatest}" ] && [ -z "${v2latest}" ] && echo -e "[${red}Error${plain}] 获取失败！" && exit 1
-  tspcurrent=$(/usr/local/bin/tls-shunt-proxy 2>&1 | grep version | cut -d' ' -f3)
+  tspcurrent=$(/usr/local/bin/tls-shunt-proxy 2>&1 | awk 'NR==1 {print $3}')
   if [ "${tsplatest}" == "${tspcurrent}" ]; then
     echo -e "[${green}Info${plain}] ${yellow}tls-shunt-proxy${plain}已安装最新版本${green}${tsplatest}${plain}。"
   else
-    echo -e "[${green}Info${plain}] 当前版本：${red}${tspcurrent}${plain}"
-    echo -e "[${green}Info${plain}] 最新版本：${red}${tsplatest}${plain}"
-    echo -e "[${green}Info${plain}] 正在更新${yellow}tls-shunt-proxy${plain}..."
+    echo -e "[${green}Info${plain}] 正在更新${yellow}tls-shunt-proxy${plain}：${red}${tspcurrent}${plain} --> ${green}${tsplatest}${plain}"
     wget -c "https://api.azzb.workers.dev/$tsplink"
     unzip -oq "tls-shunt-proxy-linux-amd64.zip"
     install -m 755 "tls-shunt-proxy" /usr/local/bin/

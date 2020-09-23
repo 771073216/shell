@@ -102,8 +102,8 @@ set_bbr() {
 update_v2ray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | grep 'tag_name' | cut -d\" -f4)
-  v2current=v$(/usr/local/bin/v2ray -version | grep V2Ray | cut -d' ' -f2)
+  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  v2current=v$(/usr/local/bin/v2ray -version | awk 'NR==1 {print $2}')
   if [ "${v2latest}" == "${v2current}" ]; then
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}已安装最新版本${green}${v2latest}${plain}。"
   else

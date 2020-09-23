@@ -34,7 +34,6 @@ config_v2ray() {
   read -r h2path
   install -d /usr/local/etc/v2ray/
   set_v2
-  set_caddy
   set_bbr
 }
 
@@ -99,15 +98,14 @@ set_bbr() {
 update_v2ray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | grep 'tag_name' | cut -d\" -f4)
-  v2current=v$(/usr/local/bin/v2ray -version | grep V2Ray | cut -d' ' -f2)
+  v2latest=$(wget -qO- "https://api.github.com/repos/v2fly/v2ray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  v2current=v$(/usr/local/bin/v2ray -version | awk 'NR==1 {print $2}')
   if [ "${v2latest}" == "${v2current}" ]; then
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}已安装最新版本${green}${v2latest}${plain}。"
   else
     echo -e "[${green}Info${plain}] 正在更新${yellow}V2Ray${plain}：${red}${v2current}${plain} --> ${green}${v2latest}${plain}"
-    wget -c "https://api.azzb.workers.dev/$v2link"
-    unzip -q "v2ray-linux-64.zip"
-    install -m 755 "v2ray" "v2ctl" /usr/local/bin/
+    install_file
+    systemctl daemon-reload
     systemctl restart v2ray
     echo -e "[${green}Info${plain}] ${yellow}V2Ray${plain}更新成功！"
   fi
@@ -115,22 +113,32 @@ update_v2ray() {
   exit 0
 }
 
-install_v2ray() {
-  pre_install
-  check_v2
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  wget -c "https://api.azzb.workers.dev/$v2link"
-  unzip -jq "v2ray-linux-64.zip"
-  install -m 755 "v2ray" "v2ctl" /usr/local/bin/
-  install -m 644 "v2ray.service" /etc/systemd/system/
+install_caddy() {
   if ! command -v "caddy" >/dev/null 2>&1; then
     echo "deb [trusted=yes] https://apt.fury.io/caddy/ /" >/etc/apt/sources.list.d/caddy-fury.list
     apt update && apt install caddy
   fi
+  set_caddy
+  systemctl restart caddy
+}
+
+install_file() {
+  wget -c "https://api.azzb.workers.dev/$v2link"
+  unzip -jq "v2ray-linux-64.zip"
+  sed -i s/nobody/caddy/g "v2ray.service"
+  install -m 755 "v2ray" "v2ctl" /usr/local/bin/
+  install -m 644 "v2ray.service" /etc/systemd/system/
+}
+
+install_v2ray() {
+  pre_install
+  check_v2
+  install_caddy
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
+  install_file
   config_v2
   rm -rf "$TMP_DIR"
-  systemctl restart caddy
   systemctl enable v2ray --now
   info_v2ray
 }

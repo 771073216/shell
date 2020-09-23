@@ -5,7 +5,7 @@ green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
 TMP_DIR="$(mktemp -du)"
-latest=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest | grep 'tag_name' | cut -d\" -f4)
+latest=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest | awk -F '"' '/tag_name/ {print $4}')
 link=https://github.com/shadowsocks/shadowsocks-rust/releases/latest/download/shadowsocks-$latest.x86_64-unknown-linux-gnu.tar.xz
 
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
@@ -48,7 +48,8 @@ After=network.target
 [Service]
 Type=simple
 User=nobody
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 ExecStart=/usr/local/bin/ssserver -c /etc/shadowsocks-rust/config.json
 ExecStop=/usr/bin/killall ssserver
 Restart=on-failure
@@ -77,7 +78,7 @@ install_ss() {
 get_update() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  current=v$(ssserver -V | cut -d" " -f2)
+  current=v$(ssserver -V | awk '{print $2}')
   if [ "${latest}" == "${current}" ]; then
     echo -e "[${green}Info${plain}] 已安装最新版本${green}${latest}${plain}"
   else
