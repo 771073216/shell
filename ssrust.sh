@@ -11,7 +11,7 @@ link=https://github.com/shadowsocks/shadowsocks-rust/releases/latest/download/sh
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
 
 check_ss() {
-  if command -v "ssserver" >/dev/null 2>&1; then
+  if command -v "ssserver" > /dev/null 2>&1; then
     get_update
   fi
 }
@@ -28,7 +28,7 @@ config_ss() {
 }
 
 set_ss() {
-  cat >/etc/shadowsocks-rust/config.json <<-EOF
+  cat > /etc/shadowsocks-rust/config.json <<- EOF
 {
     "server":"::",
     "server_port":$port,
@@ -41,7 +41,7 @@ EOF
 }
 
 set_service() {
-  cat >/etc/systemd/system/shadowsocks.service <<-EOF
+  cat > /etc/systemd/system/shadowsocks.service <<- EOF
 [Unit]
 Description=ss Service
 After=network.target
@@ -96,8 +96,8 @@ set_bbr() {
   echo -e "[${green}Info${plain}] 设置bbr..."
   sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
-  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >>'/etc/sysctl.conf'
-  sysctl -p >/dev/null 2>&1
+  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
+  sysctl -p > /dev/null 2>&1
 }
 
 uninstall_ss() {

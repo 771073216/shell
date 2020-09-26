@@ -13,13 +13,13 @@ tsplink=https://github.com/liberal-boy/tls-shunt-proxy/releases/latest/download/
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
 
 check_install() {
-  if command -v "v2ray" >/dev/null 2>&1; then
+  if command -v "v2ray" > /dev/null 2>&1; then
     update_v2ray
   else
     install_v2
     config_v2ray
   fi
-  if command -v "tls-shunt-proxy" >/dev/null 2>&1; then
+  if command -v "tls-shunt-proxy" > /dev/null 2>&1; then
     update_tsp
   else
     install_tsp
@@ -28,9 +28,9 @@ check_install() {
 }
 
 pre_install() {
-  if ! command -v "unzip" >/dev/null 2>&1; then
+  if ! command -v "unzip" > /dev/null 2>&1; then
     echo -e "[${green}Info${plain}] 正在安装unzip..."
-    if command -v "apt" >/dev/null 2>&1; then
+    if command -v "apt" > /dev/null 2>&1; then
       apt -y install unzip
     else
       yum -y install unzip
@@ -71,7 +71,7 @@ config_tsp() {
 }
 
 set_v2() {
-  cat >/usr/local/etc/v2ray/config.json <<-EOF
+  cat > /usr/local/etc/v2ray/config.json <<- EOF
 {
     "inbounds": [
         {
@@ -103,7 +103,7 @@ EOF
 }
 
 set_tsp() {
-  cat >/etc/tls-shunt-proxy/config.yaml <<-EOF
+  cat > /etc/tls-shunt-proxy/config.yaml <<- EOF
 listen: 0.0.0.0:443
 redirecthttps: 0.0.0.0:80
 inboundbuffersize: 4
@@ -124,7 +124,7 @@ EOF
 }
 
 set_service() {
-  cat >/etc/systemd/system/v2ray.service <<-EOF
+  cat > /etc/systemd/system/v2ray.service <<- EOF
 [Unit]
 Description=V2Ray Service
 After=network.target nss-lookup.target
@@ -148,8 +148,8 @@ set_bbr() {
   echo -e "[${green}Info${plain}] 设置bbr..."
   sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
-  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >>'/etc/sysctl.conf'
-  sysctl -p >/dev/null 2>&1
+  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
+  sysctl -p > /dev/null 2>&1
 }
 
 install_v2ray() {
@@ -157,11 +157,11 @@ install_v2ray() {
   cd "$TMP_DIR" || exit 1
   pre_install
   check_install
+  rm -rf "$TMP_DIR"
   set_bbr
   systemctl enable v2ray
   systemctl enable tls-shunt-proxy
   info_v2ray
-  rm -rf "$TMP_DIR"
 }
 
 install_v2() {
@@ -178,7 +178,7 @@ install_tsp() {
   wget -qP /etc/systemd/system/ 'https://cdn.jsdelivr.net/gh/liberal-boy/tls-shunt-proxy@master/dist/tls-shunt-proxy.service'
   unzip -oq "tls-shunt-proxy-linux-amd64.zip"
   install -m 755 "tls-shunt-proxy" /usr/local/bin/
-  if [ -z "$(cat /etc/passwd | grep tls-shunt-proxy)" ]; then
+  if ! grep < /etc/passwd tls-shunt-proxy; then
     useradd tls-shunt-proxy -s /usr/sbin/nologin
   fi
   install -d -o tls-shunt-proxy -g tls-shunt-proxy /etc/ssl/tls-shunt-proxy/
@@ -217,6 +217,7 @@ update_tsp() {
     systemctl restart tls-shunt-proxy
     echo -e "[${green}Info${plain}] ${yellow}tls-shunt-proxy${plain}更新成功！"
   fi
+  rm -rf "$TMP_DIR"
   exit 0
 }
 
@@ -227,15 +228,15 @@ info_v2ray() {
   [ ! -f /etc/tls-shunt-proxy/config.yaml ] && echo -e "[${red}Error${plain}] 未找到tls-shunt-proxy配置文件！" && exit 1
   [ "$status" -eq 0 ] && v2status="${red}已停止${plain}" || v2status="${green}正在运行${plain}"
   [ "$tspstatus" -eq 0 ] && tspshuntproxy="${red}已停止${plain}" || tspshuntproxy="${green}正在运行${plain}"
-  echo -e " id： ${green}$(grep <'/usr/local/etc/v2ray/config.json' id | cut -d'"' -f4)${plain}"
+  echo -e " id： ${green}$(grep < '/usr/local/etc/v2ray/config.json' id | cut -d'"' -f4)${plain}"
   echo -e " v2ray运行状态：${v2status}"
   echo -e " tls-shunt-proxy运行状态：${tspshuntproxy}"
 }
 
 uninstall_v2ray() {
   echo -e "[${green}Info${plain}] 正在卸载${yellow}v2ray${plain}和${yellow}tls-shunt-proxy${plain}..."
-  systemctl disable v2ray --now >/dev/null 2>&1
-  systemctl disable tls-shunt-proxy --now >/dev/null 2>&1
+  systemctl disable v2ray --now > /dev/null 2>&1
+  systemctl disable tls-shunt-proxy --now > /dev/null 2>&1
   rm -f /usr/local/bin/v2ray
   rm -f /usr/local/bin/v2ctl
   rm -rf /usr/local/etc/v2ray/
