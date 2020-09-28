@@ -14,9 +14,11 @@ cryptoerror=$(grep < "$file" -c 'AEAD decrypt error')
 ((failed = "$countip" - "$count"))
 def() {
   echo -e "${green}$start --> $end${plain}"
-  echo -ne "${yellow}replay attack count:$count${plain}   "
   if [ -n "$starttime" ]; then
+    echo -ne "${yellow}replay attack count:$count${plain}   "
     echo -e "${red}start at $starttime${plain}"
+  else
+    echo -e "${yellow}replay attack count:$count${plain}   "
   fi
   echo -e "${yellow}connect failed count:$failed${plain}"
   echo -e "${yellow}crypto failed count:$cryptoerror${plain}"
@@ -83,7 +85,7 @@ b() {
   b
 }
 
-t(){
+t() {
   tail -f "$file"
 }
 
