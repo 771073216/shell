@@ -12,6 +12,9 @@ starttime=$(grep < "$file" crypto_io | head -n 1 | awk '{print$1,$2,$3}')
 countip=$(grep < "$file" -c 'failed to decode Address')
 cryptoerror=$(grep < "$file" -c 'AEAD decrypt error')
 udp=$(grep < "$file" -c 'finished')
+month=$(date "+%Y-%m")
+data=$(vnstat -s | grep "$month" | awk '{print$5,$6}')
+todaydata=$(vnstat -s | grep "today" | awk '{print$5,$6}')
 ((failed = "$countip" - "$count"))
 def() {
   if [ -n "$list" ]; then
@@ -24,10 +27,12 @@ def() {
     echo -e "${yellow}replay attack count:$count${plain}   "
   fi
   echo -e "${green}udp connected count:$udp${plain}"
-  if [[ "$udp" -gt 0 ]]; then
-    udptraffic=$(($(grep < "$file" 'UDP ASSO' | grep -v 'message repeated' | grep -v 'finished' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
-    echo -e "${green}udp connected traffic:$udptraffic Kb${plain}"
-  fi
+  echo -e "${green}today TX data:$todaydata${plain}"
+  echo -e "${green}month TX data:$data${plain}"
+#  if [[ "$udp" -gt 0 ]]; then
+#    udptraffic=$(($(grep < "$file" 'UDP ASSO' | grep -v 'message repeated' | grep -v 'finished' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
+#    echo -e "${green}udp connected traffic:$udptraffic Kb${plain}"
+#  fi
   echo -e "${yellow}connect failed count:$failed${plain}"
   echo -e "${yellow}crypto failed count:$cryptoerror${plain}"
   if [ -z "$list" ]; then
