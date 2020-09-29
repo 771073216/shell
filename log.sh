@@ -6,19 +6,27 @@ plain='\033[0m'
 file=/var/log/ss.log
 start=$(awk < "$file" 'NR==1{print$1,$2,$3}')
 end=$(awk < "$file" 'END{print$1,$2,$3}')
-list=$(grep < "$file" RELAY | awk -F'[]:]+' '{print$10}' | sort | uniq -c | sort -r)
+list=$(grep < "$file" established | awk -F'[]:]+' '{print$10}' | sort | uniq -c | sort -r)
 count=$(grep < "$file" -c crypto_io)
 starttime=$(grep < "$file" crypto_io | head -n 1 | awk '{print$1,$2,$3}')
 countip=$(grep < "$file" -c 'failed to decode Address')
 cryptoerror=$(grep < "$file" -c 'AEAD decrypt error')
+udp=$(grep < "$file" -c 'finished')
 ((failed = "$countip" - "$count"))
 def() {
-  echo -e "${green}$start --> $end${plain}"
+  if [ -n "$list" ]; then
+    echo -e "${green}$start --> $end${plain}"
+  fi
   if [ -n "$starttime" ]; then
     echo -ne "${yellow}replay attack count:$count${plain}   "
     echo -e "${red}start at $starttime${plain}"
   else
     echo -e "${yellow}replay attack count:$count${plain}   "
+  fi
+  echo -e "${green}udp connected count:$udp${plain}"
+  if [[ "$udp" -gt 0 ]]; then
+    udptraffic=$(($(grep < "$file" 'UDP ASSO' | grep -v 'message repeated' | grep -v 'finished' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
+    echo -e "${green}udp connected traffic:$udptraffic Kb${plain}"
   fi
   echo -e "${yellow}connect failed count:$failed${plain}"
   echo -e "${yellow}crypto failed count:$cryptoerror${plain}"
@@ -48,7 +56,7 @@ q() {
   fi
   locate=$(curl -sSL http://freeapi.ipip.net/"$ip" | awk -F'["]' '{print$2,$4,$6,$8,$10}')
   echo -e "${yellow}$ip   $locate${plain}"
-  #  grep < "$file" "$ip"
+  #grep < "$file" "$ip"
 }
 
 l() {
