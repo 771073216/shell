@@ -125,7 +125,6 @@ install_caddy() {
 install_file() {
   wget -c "https://api.azzb.workers.dev/$v2link"
   unzip -jq "v2ray-linux-64.zip"
-  sed -i s/nobody/caddy/g "v2ray.service"
   install -m 755 "v2ray" "v2ctl" /usr/local/bin/
   install -m 644 "v2ray.service" /etc/systemd/system/
 }
@@ -157,7 +156,8 @@ info_v2ray() {
   status=$(pgrep -a v2ray | grep -c v2ray)
   [ ! -f /usr/local/etc/v2ray/config.json ] && echo -e "[${red}Error${plain}] 未找到V2Ray配置文件！" && exit 1
   [ "$status" -eq 0 ] && v2status="${red}已停止${plain}" || v2status="${green}正在运行${plain}"
-  echo -e " id： ${green}$(grep < '/usr/local/etc/v2ray/config.json' id | cut -d'"' -f4)${plain}"
+  echo -e " id： ${green}$(grep < '/usr/local/etc/v2ray/config.json' id | awk -F'"' '{print$4}')${plain}"
+  echo -e " path：${green}$(grep < '/usr/local/etc/v2ray/config.json' path | awk -F'[/"]' '{print$5}')${plain}"
   echo -e " v2ray运行状态：${v2status}"
 }
 
