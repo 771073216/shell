@@ -15,6 +15,7 @@ udp=$(grep < "$file" -c 'finished')
 month=$(date "+%Y-%m")
 data=$(vnstat -s | grep "$month" | awk '{print$5,$6}')
 todaydata=$(vnstat -s | grep "today" | awk '{print$5,$6}')
+list2=$(grep < "$file" finished | awk -F'[]:]+' '{print$10}' | sort | uniq -c | sort -r)
 ((failed = "$countip" - "$count"))
 def() {
   if [ -n "$list" ]; then
@@ -26,56 +27,42 @@ def() {
   else
     echo -e "${yellow}replay attack count:$count${plain}   "
   fi
-  echo -e "${green}udp connected count:$udp${plain}"
-  echo -e "${green}today TX data:$todaydata${plain}"
-  echo -e "${green}month TX data:$data${plain}"
-#  if [[ "$udp" -gt 0 ]]; then
-#    udptraffic=$(($(grep < "$file" 'UDP ASSO' | grep -v 'message repeated' | grep -v 'finished' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
-#    echo -e "${green}udp connected traffic:$udptraffic Kb${plain}"
-#  fi
   echo -e "${yellow}connect failed count:$failed${plain}"
   echo -e "${yellow}crypto failed count:$cryptoerror${plain}"
+  echo -e "${green}today TX data:$todaydata${plain}"
+  echo -e "${green}month TX data:$data${plain}"
+  echo -e "${green}udp connected count:$udp${plain}"
+  if [[ "$udp" -gt 0 ]]; then
+    udptrafficrx=$(($(grep < "$file" 'payload' | grep '<' | grep -v 'message repeated' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
+    echo -e "${green}udp connected RX traffic:$udptrafficrx Kb${plain}"
+  fi
   if [ -z "$list" ]; then
-    echo "no ip connected"
+    echo "no connection"
   else
-    echo -e "${green}      connected ip list     ${plain}"
-    echo "------------------------------"
-    echo " counts      ip"
-    echo "$list"
-    echo "------------------------------"
-    num=$(echo "$list" | wc -l)
-    bom=$(echo "$list" | head -n "$num" | tail -n 1 | awk '{print$1}')
-    if [ "$bom" -lt 10 ]; then
-      echo -e "${yellow}low connects ip${plain}"
-      qwe
-    fi
+    echo -e "${green}          connected ip list     ${plain}"
+    echo "----------------------------------------------"
+    echo -e "      ${green}tcp                       udp${plain}"
+    echo " counts      ip           counts      ip"
+    echo "$list     $list2"
+    echo "----------------------------------------------"
   fi
 }
 
 q() {
   def
-  echo -n "ip:"
+  echo -n "which tcp:"
   read -r ip
   if [ -z "$ip" ]; then
     exit 0
   fi
-  locate=$(curl -sSL http://freeapi.ipip.net/"$ip" | awk -F'["]' '{print$2,$4,$6,$8,$10}')
-  echo -e "${yellow}$ip   $locate${plain}"
+  tcp=$(echo "$list" | head -n "$ip" | tail -n 1 | awk '{print$2}')
+  locate=$(curl -sSL http://freeapi.ipip.net/"$tcp" | awk -F'["]' '{print$2,$4,$6,$8,$10}')
+  echo -e "${yellow}$tcp   $locate${plain}"
   #grep < "$file" "$ip"
 }
 
 l() {
   cat "$file"
-}
-
-qwe() {
-  for ((i = 1; i < "$num"; i++)); do
-    test=$(echo "$list" | head -n "$i" | tail -n 1 | awk '{print$1}')
-    if [ "$test" -lt 10 ]; then
-      ip=$(echo "$list" | head -n "$i" | tail -n 1 | awk '{print$2}')
-      echo "$ip"
-    fi
-  done
 }
 
 b() {
