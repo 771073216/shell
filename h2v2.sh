@@ -33,6 +33,7 @@ config_v2ray() {
   echo -e -n "[${green}Info${plain}] 输入path： "
   read -r h2path
   install -d /usr/local/etc/v2ray/
+  install -d /usr/local/share/v2ray/
   set_v2
   set_bbr
 }
@@ -40,49 +41,59 @@ config_v2ray() {
 set_v2() {
   cat > /usr/local/etc/v2ray/config.json <<- EOF
 {
-    "inbounds": [
-        {
-            "protocol": "vmess",
-            "listen": "127.0.0.1",
-            "port": 2001,
-            "settings": {
-                "clients": [
-                    {
-                        "id": "${uuid}"
-                    }
-                ]
-            },
-            "streamSettings": {
-        "security": "none",
-        "network": "h2",
-        "httpSettings": {
-          "path": "/${h2path}",
-          "host": [
-            "${domain}"
-          ]
-        }
+  "inbounds": [{
+    "protocol": "vmess",
+    "listen": "127.0.0.1",
+    "port": 2001,
+    "settings": {
+      "clients": [{
+        "id": "${uuid}"
+      }]
+    },
+    "streamSettings": {
+      "security": "none",
+      "network": "h2",
+      "httpSettings": {
+        "path": "/${h2path}",
+        "host": [
+          "${domain}"
+        ]
       }
-        }
-    ],
-	"outbounds": [
-        {
-            "protocol": "freedom"
-        }
-    ]
+    }
+  }],
+  "outbounds": [{
+      "tag": "direct",
+      "protocol": "freedom"
+    },
+    {
+      "tag": "blocked",
+      "protocol": "blackhole"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [{
+      "type": "field",
+      "domain": [
+        "geosite:category-ads-all"
+      ],
+      "outboundTag": "blocked"
+    }]
+  }
 }
 EOF
 }
 
 set_caddy() {
-  cat > /etc/caddy/caddyfile <<- EOF
+  cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
-    root * /var/www
-    file_server
-    reverse_proxy /${h2path} 127.0.0.1:2001 {
-        transport http {
-            versions h2c
-        }
+  root * /var/www
+  file_server
+  reverse_proxy /${h2path} 127.0.0.1:2001 {
+    transport http {
+      versions h2c
     }
+  }
 }
 EOF
 }
@@ -126,6 +137,7 @@ install_file() {
   wget -c "https://api.azzb.workers.dev/$v2link"
   unzip -jq "v2ray-linux-64.zip"
   install -m 755 "v2ray" "v2ctl" /usr/local/bin/
+  install -m 644 "geosite.dat" /usr/share/v2ray/
   install -m 644 "v2ray.service" /etc/systemd/system/
 }
 
@@ -135,8 +147,8 @@ install_v2ray() {
   install_caddy
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  install_file
   config_v2
+  install_file
   rm -rf "$TMP_DIR"
   systemctl enable v2ray --now
   info_v2ray
