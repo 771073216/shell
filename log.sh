@@ -9,42 +9,41 @@ end=$(awk < "$file" 'END{print$1,$2,$3}')
 list=$(grep < "$file" established | awk -F'[]:]+' '{print$10}' | sort | uniq -c | sort -r)
 count=$(grep < "$file" -c crypto_io)
 starttime=$(grep < "$file" crypto_io | head -n 1 | awk '{print$1,$2,$3}')
-countip=$(grep < "$file" -c 'failed to decode Address')
 cryptoerror=$(grep < "$file" -c 'AEAD decrypt error')
 udp=$(grep < "$file" -c 'finished')
 month=$(date "+%Y-%m")
 data=$(vnstat -s | grep "$month" | awk '{print$5,$6}')
 todaydata=$(vnstat -s | grep "today" | awk '{print$5,$6}')
 list2=$(grep < "$file" finished | awk -F'[]:]+' '{print$10}' | sort | uniq -c | sort -r)
-((failed = "$countip" - "$count"))
 def() {
   if [ -n "$list" ]; then
     echo -e "${green}$start --> $end${plain}"
   fi
   if [ -n "$starttime" ]; then
-    echo -ne "${yellow}replay attack count:$count${plain}   "
+    echo -ne "${yellow}detected repeated attack:$count${plain}   "
     echo -e "${red}start at $starttime${plain}"
   else
-    echo -e "${yellow}replay attack count:$count${plain}   "
+    echo -e "${yellow}detected repeated attack:$count${plain}   "
   fi
-  echo -e "${yellow}connect failed count:$failed${plain}"
-  echo -e "${yellow}crypto failed count:$cryptoerror${plain}"
+  echo -e "${yellow}AEAD decrypt failed:$cryptoerror${plain}"
   echo -e "${green}today TX data:$todaydata${plain}"
   echo -e "${green}month TX data:$data${plain}"
-  echo -e "${green}udp connected count:$udp${plain}"
+  echo -e "${green}udp connection:$udp${plain}"
   if [[ "$udp" -gt 0 ]]; then
     udptrafficrx=$(($(grep < "$file" 'payload' | grep '<' | grep -v 'message repeated' | awk -F'length' '{print$2}' | awk '{print$1}' | awk '{sum +=$1};END {print sum}') / 1024))
-    echo -e "${green}udp connected RX traffic:$udptrafficrx Kb${plain}"
+    echo -e "${green}udp RX traffic:$udptrafficrx Kb${plain}"
   fi
   if [ -z "$list" ]; then
     echo "no connection"
   else
-    echo -e "${green}          connected ip list     ${plain}"
-    echo "----------------------------------------------"
-    echo -e "      ${green}tcp                       udp${plain}"
-    echo " counts      ip           counts      ip"
-    echo "$list     $list2"
-    echo "----------------------------------------------"
+    echo "-----------------------------"
+    echo -e "         ${green}tcp${plain}"
+    echo " counts      ip"
+    echo "$list       "
+    echo -e "         ${green}udp${plain}"
+    echo " counts      ip"
+    echo "$list2"
+    echo "------------------------------"
   fi
 }
 
