@@ -88,7 +88,8 @@ set_v2() {
             "streamSettings": {
                 "network": "ds",
                 "dsSettings": {
-                    "path": "/tmp/v2ray-ds/v2ray.sock"
+                    "path": "@v2ray.sock",
+                    "abstract": true
                 }
             }
         }
@@ -119,7 +120,7 @@ vhosts:
       args: /var/www
     default:
       handler: proxyPass
-      args: unix:/tmp/v2ray-ds/v2ray.sock
+      args: unix:@v2ray.sock
 EOF
 }
 
