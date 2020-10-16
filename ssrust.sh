@@ -60,7 +60,7 @@ EOF
 
 install_file() {
   wget -cO ss.tar.xz https://api.azzb.workers.dev/"$link"
-  tar --no-same-owner -xf ss.tar.xz -C /usr/local/bin/
+  tar -oxf ss.tar.xz -C /usr/local/bin/ ssserver
 }
 
 install_ss() {
@@ -103,10 +103,7 @@ set_bbr() {
 uninstall_ss() {
   echo -e "[${green}Info${plain}] 正在卸载${yellow} Shadowsocks-rust${plain}..."
   systemctl disable shadowsocks --now
-  rm /usr/local/bin/sslocal
-  rm /usr/local/bin/ssmanager
   rm /usr/local/bin/ssserver
-  rm /usr/local/bin/ssurl
   rm /etc/systemd/system/shadowsocks.service
   rm -r /etc/shadowsocks-rust/
   echo -e "[${green}Info${plain}] 卸载成功！"

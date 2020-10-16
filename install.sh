@@ -43,7 +43,6 @@ config_v2ray() {
   rm -rf /usr/local/etc/v2ray/
   install -d /usr/local/etc/v2ray/
   set_v2
-  set_service
   set_bbr
   systemctl daemon-reload
   systemctl restart v2ray
@@ -121,27 +120,6 @@ vhosts:
     default:
       handler: proxyPass
       args: unix:@v2ray.sock
-EOF
-}
-
-set_service() {
-  cat > /etc/systemd/system/v2ray.service <<- EOF
-[Unit]
-Description=V2Ray Service
-After=network.target nss-lookup.target
-[Service]
-User=nobody
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
-ExecStartPre=/bin/mkdir -p /tmp/v2ray-ds
-ExecStartPre=/bin/rm -rf /tmp/v2ray-ds/*.sock
-ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/
-ExecStartPost=/bin/sleep 1
-ExecStartPost=/bin/chmod 777 /tmp/v2ray-ds/v2ray.sock
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
 EOF
 }
 

@@ -33,7 +33,6 @@ config_v2ray() {
   echo -e -n "[${green}Info${plain}] 输入path： "
   read -r h2path
   install -d /usr/local/etc/v2ray/
-  install -d /usr/local/share/v2ray/
   set_v2
   set_bbr
 }
@@ -62,24 +61,9 @@ set_v2() {
     }
   }],
   "outbounds": [{
-      "tag": "direct",
       "protocol": "freedom"
-    },
-    {
-      "tag": "blocked",
-      "protocol": "blackhole"
     }
-  ],
-  "routing": {
-    "domainStrategy": "IPIfNonMatch",
-    "rules": [{
-      "type": "field",
-      "domain": [
-        "geosite:category-ads-all"
-      ],
-      "outboundTag": "blocked"
-    }]
-  }
+  ]
 }
 EOF
 }
@@ -137,7 +121,6 @@ install_file() {
   wget -c "https://api.azzb.workers.dev/$v2link"
   unzip -jq "v2ray-linux-64.zip"
   install -m 755 "v2ray" "v2ctl" /usr/local/bin/
-  install -m 644 "geosite.dat" /usr/share/v2ray/
   install -m 644 "v2ray.service" /etc/systemd/system/
 }
 
