@@ -36,6 +36,14 @@ config_v2ray() {
   set_bbr
 }
 
+set_cron() {
+  cat > /etc/cron.monthly/ssl <<- EOF
+install -m 644 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.crt -t /etc/ssl/v2ray/
+install -m 600 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.key -t /etc/ssl/v2ray/
+systemctl restart v2ray
+EOF
+}
+
 set_v2() {
   cat > /usr/local/etc/v2ray/config.json <<- EOF
 {
@@ -65,8 +73,8 @@ set_v2() {
                     ],
                     "certificates": [
                         {
-                            "certificateFile": "${ssl_dir}${domain}/${domain}.crt",
-                            "keyFile": "${ssl_dir}${domain}/${domain}.key"
+                            "certificateFile": "/etc/ssl/v2ray/${domain}.crt",
+                            "keyFile": "/etc/ssl/v2ray/${domain}.key"
                         }
                     ]
                 }
@@ -129,9 +137,14 @@ install_caddy() {
 install_file() {
   wget -c "https://api.azzb.workers.dev/$v2link"
   unzip -jq "v2ray-linux-64.zip"
-  sed -i s/nobody/caddy/g "v2ray.service"
   install -m 755 "v2ray" "v2ctl" /usr/local/bin/
   install -m 644 "v2ray.service" /etc/systemd/system/
+}
+
+ssl_config() {
+  install -d -o nobody -g nogroup /etc/ssl/v2ray/
+  install -m 644 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".crt -t /etc/ssl/v2ray/
+  install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/v2ray/
 }
 
 install_v2ray() {
@@ -143,6 +156,7 @@ install_v2ray() {
   install_file
   config_v2
   rm -rf "$TMP_DIR"
+  ssl_config
   systemctl enable v2ray --now
   info_v2ray
 }
