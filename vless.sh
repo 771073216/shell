@@ -145,6 +145,7 @@ ssl_config() {
   install -d -o nobody -g nogroup /etc/ssl/v2ray/
   install -m 644 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".crt -t /etc/ssl/v2ray/
   install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/v2ray/
+  set_cron
 }
 
 install_v2ray() {
