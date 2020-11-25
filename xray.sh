@@ -1,20 +1,27 @@
 #!/bin/bash
 red='\033[0;31m'
 green='\033[0;32m'
+yellow='\033[0;33m'
 plain='\033[0m'
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 
-pre_install(){
+check_v2() {
+  if command -v "xray" > /dev/null 2>&1; then
+    update_xray
+  fi
+}
+
+pre_install() {
   wget -c "https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip"
   unzip -oq "html.zip" -d '/var/www'
   echo -e -n "[${green}Info${plain}] 输入域名： "
   read -r domain
 }
 
-set_v2ray() {
-  install -d /usr/local/etc/v2ray/
+set_xray() {
+  install -d /usr/local/etc/xray/
   set_v2
   set_bbr
   set_ssl
@@ -22,7 +29,7 @@ set_v2ray() {
 }
 
 set_v2() {
-  cat > /etc/v2ray/config.json <<- EOF
+  cat > /etc/xray/config.json <<- EOF
 {
     "inbounds": [
         {
@@ -50,8 +57,8 @@ set_v2() {
                     ],
                     "certificates": [
                         {
-                            "certificateFile": "/etc/ssl/v2ray/${domain}.crt",
-                            "keyFile": "/etc/ssl/v2ray/${domain}.key"
+                            "certificateFile": "/etc/ssl/xray/${domain}.crt",
+                            "keyFile": "/etc/ssl/xray/${domain}.key"
                         }
                     ]
                 }
@@ -85,57 +92,86 @@ set_bbr() {
 }
 
 set_ssl() {
-  install -d -o nobody -g nogroup /etc/ssl/v2ray/
-  install -m 644 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".crt -t /etc/ssl/v2ray/
-  install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/v2ray/
+  install -d -o nobody -g nogroup /etc/ssl/xray/
+  install -m 644 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".crt -t /etc/ssl/xray/
+  install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/xray/
 }
 
 set_cron() {
   cat > /etc/cron.monthly/ssl <<- EOF
 #!/bin/sh
-install -m 644 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.crt -t /etc/ssl/v2ray/
-install -m 600 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.key -t /etc/ssl/v2ray/
-systemctl restart v2ray
+install -m 644 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.crt -t /etc/ssl/xray/
+install -m 600 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.key -t /etc/ssl/xray/
+systemctl restart xray
 EOF
 }
 
-install_file() {
+install_caddy() {
   if ! command -v "caddy" > /dev/null 2>&1; then
     echo "deb [trusted=yes] https://apt.fury.io/caddy/ /" > /etc/apt/sources.list.d/caddy-fury.list
+    apt update
+    apt install caddy
   fi
-  if ! command -v "v2ray" > /dev/null 2>&1; then
-    curl -sSL https://apt.v2fly.org/pubkey.gpg | sudo apt-key add -
-    echo "deb [arch=amd64] https://apt.v2fly.org/ stable main" | sudo tee /etc/apt/sources.list.d/v2ray.list
-  fi
-  apt update
-  apt install caddy v2ray -y
   set_caddy
   systemctl restart caddy
-  set_v2ray
-  systemctl restart v2ray
 }
 
+install_file() {
+  wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
+  unzip -oq "Xray-linux-64.zip"
+  install -m 755 "xray" /usr/local/bin/
+  install -m 644 "xray.service" /etc/systemd/system/
+}
 
+update_xray() {
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
+  v2latest=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  v2current=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
+  if [ "${v2latest}" == "${v2current}" ]; then
+    echo -e "[${green}Info${plain}] ${yellow}xray${plain}已安装最新版本${green}${v2latest}${plain}。"
+  else
+    echo -e "[${green}Info${plain}] 正在更新${yellow}xray${plain}：${red}${v2current}${plain} --> ${green}${v2latest}${plain}"
+    install_file
+    systemctl daemon-reload
+    systemctl restart xray
+    echo -e "[${green}Info${plain}] ${yellow}xray${plain}更新成功！"
+  fi
+  rm -rf "$TMP_DIR"
+  exit 0
+}
 
-install_v2ray() {
+install_xray() {
   pre_install
+  install_caddy
   install_file
-  info_v2ray
+  set_xray
+  systemctl enable xray --now
+  info_xray
 }
 
-info_v2ray() {
-  status=$(pgrep -a v2ray | grep -c v2ray)
-  [ ! -f /etc/v2ray/config.json ] && echo -e "[${red}Error${plain}] 未找到V2Ray配置文件！" && exit 1
+uninstall_xray() {
+  echo -e "[${green}Info${plain}] 正在卸载${yellow}xray${plain}..."
+  systemctl disable xray --now
+  rm -f /usr/local/bin/xray
+  rm -rf /usr/local/etc/xray/
+  rm -f /etc/systemd/system/xray.service
+  echo -e "[${green}Info${plain}] 卸载成功！"
+}
+
+info_xray() {
+  status=$(pgrep -a xray | grep -c xray)
+  [ ! -f /etc/xray/config.json ] && echo -e "[${red}Error${plain}] 未找到xray配置文件！" && exit 1
   [ "$status" -eq 0 ] && v2status="${red}已停止${plain}" || v2status="${green}正在运行${plain}"
-  echo -e " id： ${green}$(grep < '/etc/v2ray/config.json' id | cut -d'"' -f4)${plain}"
-  echo -e " v2ray运行状态：${v2status}"
+  echo -e " id： ${green}$(grep < '/etc/xray/config.json' id | cut -d'"' -f4)${plain}"
+  echo -e " xray运行状态：${v2status}"
 }
 
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
   install | info)
-    ${action}_v2ray
+    ${action}_xray
     ;;
   *)
     echo "参数错误！ [${action}]"

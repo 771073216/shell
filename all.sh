@@ -114,9 +114,11 @@ choice() {
 }
 
 install_v2() {
-  curl -sSL https://apt.v2fly.org/pubkey.gpg | sudo apt-key add -
-  echo "deb [arch=amd64] https://apt.v2fly.org/ stable main" | sudo tee /etc/apt/sources.list.d/v2ray.list
-  apt update
+  if ! [ -f /etc/apt/sources.list.d/v2ray.list ]; then
+    curl -sSL https://apt.v2fly.org/pubkey.gpg | sudo apt-key add -
+    echo "deb [arch=amd64] https://apt.v2fly.org/ stable main" | sudo tee /etc/apt/sources.list.d/v2ray.list
+    apt update
+  fi
   apt install v2ray -y
 }
 
@@ -223,18 +225,23 @@ info_v2ray() {
 }
 
 uninstall_v2ray() {
-  echo -e "[${green}Info${plain}] 正在卸载{yellow}tls-shunt-proxy${plain}..."
   systemctl disable tls-shunt-proxy --now
   rm -f /etc/systemd/system/tls-shunt-proxy.service
   rm -f /usr/local/bin/tls-shunt-proxy
-  echo -e "[${green}Info${plain}] 卸载成功！"
+  apt purge v2ray -y
 }
 
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install | uninstall | info)
-    ${action}_v2ray
+  install)
+    install_v2ray
+    ;;
+  -u)
+    uninstall_v2ray
+    ;;
+  -i)
+    info_v2ray
     ;;
   *)
     echo "参数错误！ [${action}]"
