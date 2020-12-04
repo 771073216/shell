@@ -142,6 +142,7 @@ update_xray() {
 }
 
 install_xray() {
+  check_v2
   pre_install
   install_caddy
   install_file

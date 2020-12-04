@@ -35,6 +35,7 @@ set_ss() {
     "password":"$passwd",
     "timeout":300,
     "method":"aes-128-gcm",
+    "nameserver":"cloudflare",
     "mode":"tcp_and_udp"
 }
 EOF
