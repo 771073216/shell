@@ -7,6 +7,7 @@ TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
+link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 check_v2() {
   if command -v "xray" > /dev/null 2>&1; then
@@ -118,8 +119,8 @@ install_caddy() {
 }
 
 install_file() {
-  wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-  unzip -oq "Xray-linux-64.zip"
+  wget https://api.azzb.workers.dev/"$link"
+  unzip -ojq "Xray-linux-64.zip"
   install -m 755 "xray" /usr/local/bin/
   install -m 644 "xray.service" /etc/systemd/system/
 }
