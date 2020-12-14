@@ -9,7 +9,7 @@ uuid=$(cat /proc/sys/kernel/random/uuid)
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
-check_v2() {
+check_xray() {
   if command -v "xray" > /dev/null 2>&1; then
     update_xray
   fi
@@ -24,14 +24,14 @@ pre_install() {
 
 set_xray() {
   install -d /usr/local/etc/xray/
-  set_v2
+  set_conf
   set_bbr
   set_ssl
   set_cron
 }
 
-set_v2() {
-  cat > /etc/xray/config.json <<- EOF
+set_conf() {
+  cat > /usr/local/etc/xray/config.json <<- EOF
 {
     "inbounds": [
         {
@@ -128,12 +128,12 @@ install_file() {
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  v2latest=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-  v2current=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
-  if [ "${v2latest}" == "${v2current}" ]; then
-    echo -e "[${green}Info${plain}] ${yellow}xray${plain}已安装最新版本${green}${v2latest}${plain}。"
+  xraylatest=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  xraycurrent=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
+  if [ "${xraylatest}" == "${xraycurrent}" ]; then
+    echo -e "[${green}Info${plain}] ${yellow}xray${plain}已安装最新版本${green}${xraylatest}${plain}。"
   else
-    echo -e "[${green}Info${plain}] 正在更新${yellow}xray${plain}：${red}${v2current}${plain} --> ${green}${v2latest}${plain}"
+    echo -e "[${green}Info${plain}] 正在更新${yellow}xray${plain}：${red}${xraycurrent}${plain} --> ${green}${xraylatest}${plain}"
     install_file
     systemctl daemon-reload
     systemctl restart xray
@@ -144,7 +144,7 @@ update_xray() {
 }
 
 install_xray() {
-  check_v2
+  check_xray
   pre_install
   install_caddy
   install_file
@@ -164,10 +164,10 @@ uninstall_xray() {
 
 info_xray() {
   status=$(pgrep -a xray | grep -c xray)
-  [ ! -f /etc/xray/config.json ] && echo -e "[${red}Error${plain}] 未找到xray配置文件！" && exit 1
-  [ "$status" -eq 0 ] && v2status="${red}已停止${plain}" || v2status="${green}正在运行${plain}"
-  echo -e " id： ${green}$(grep < '/etc/xray/config.json' id | cut -d'"' -f4)${plain}"
-  echo -e " xray运行状态：${v2status}"
+  [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${red}Error${plain}] 未找到xray配置文件！" && exit 1
+  [ "$status" -eq 0 ] && xraystatus="${red}已停止${plain}" || xraystatus="${green}正在运行${plain}"
+  echo -e " id： ${green}$(grep < '/usr/local/etc/xray/config.json' id | cut -d'"' -f4)${plain}"
+  echo -e " xray运行状态：${xraystatus}"
 }
 
 action=$1
