@@ -170,14 +170,33 @@ info_xray() {
   echo -e " xray运行状态：${xraystatus}"
 }
 
+manual() {
+  ver=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/tags | awk -F '"' '/name/ {print $4}' | head -n 1)
+  echo "$ver"
+  echo "correct?  q = quit "
+  read -r co
+  if ! [ "$co" = q ]; then
+    link=https://github.com/XTLS/Xray-core/releases/download/$ver/Xray-linux-64.zip
+    install_file
+    systemctl daemon-reload
+    systemctl restart xray
+  else
+    echo "cancel"
+    exit 0
+  fi
+}
+
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
   install | info)
     ${action}_xray
     ;;
+  -m)
+    manual
+    ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|info]"
+    echo "使用方法：$(basename "$0") [install|info|-m]"
     ;;
 esac
