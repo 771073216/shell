@@ -171,6 +171,8 @@ info_xray() {
 }
 
 manual() {
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
   ver=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/tags | awk -F '"' '/name/ {print $4}' | head -n 1)
   echo "$ver"
   echo "correct?  q = quit "
@@ -184,6 +186,7 @@ manual() {
     echo "cancel"
     exit 0
   fi
+  rm -rf "$TMP_DIR"
 }
 
 action=$1
