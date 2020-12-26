@@ -2,14 +2,16 @@
 b() {
   mkdir backup
   cp -r /var/www/ backup/
-  cp /etc/ssh/ssh_config backup/
+  cp /etc/ssh/sshd_config backup/
+  cp -r .ssh/ backup/
   zip -r backup.zip backup/
 }
 
 r() {
   unzip backup.zip
   cp -r backup/www/ /var/
-  cp backup/ssh_config /etc/ssh/
+  cp backup/sshd_config /etc/ssh/
+  cp -r backup/.ssh/ .
   rm -r backup/
   rm backup.zip
 }

@@ -27,7 +27,7 @@ set_xray() {
   set_conf
   set_bbr
   set_ssl
-  set_cron
+  set_service
 }
 
 set_conf() {
@@ -99,12 +99,22 @@ set_ssl() {
   install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/xray/
 }
 
-set_cron() {
-  cat > /etc/cron.monthly/ssl <<- EOF
-#!/bin/sh
-install -m 644 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.crt -t /etc/ssl/xray/
-install -m 600 -o nobody -g nogroup $ssl_dir/${domain}/${domain}.key -t /etc/ssl/xray/
-systemctl restart xray
+set_service(){
+cat > /etc/systemd/system/xray.service <<- EOF
+[Unit]
+Description=Xray Service
+Documentation=https://github.com/xtls
+After=network.target nss-lookup.target
+
+[Service]
+User=nobody
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
+
+[Install]
+WantedBy=multi-user.target
 EOF
 }
 
@@ -122,7 +132,6 @@ install_file() {
   wget https://api.azzb.workers.dev/"$link"
   unzip -ojq "Xray-linux-64.zip"
   install -m 755 "xray" /usr/local/bin/
-  install -m 644 "xray.service" /etc/systemd/system/
 }
 
 update_xray() {
@@ -135,7 +144,6 @@ update_xray() {
   else
     echo -e "[${green}Info${plain}] 正在更新${yellow}xray${plain}：${red}${xraycurrent}${plain} --> ${green}${xraylatest}${plain}"
     install_file
-    systemctl daemon-reload
     systemctl restart xray
     echo -e "[${green}Info${plain}] ${yellow}xray${plain}更新成功！"
   fi
