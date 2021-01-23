@@ -9,6 +9,7 @@ uuid=$(cat /proc/sys/kernel/random/uuid)
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
+
 check_xray() {
   if command -v "xray" > /dev/null 2>&1; then
     update_xray
