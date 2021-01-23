@@ -129,7 +129,7 @@ install_caddy() {
 }
 
 install_file() {
-  wget https://api.azzb.workers.dev/"$link"
+  wget -q --show-progress https://api.azzb.workers.dev/"$link"
   unzip -ojq "Xray-linux-64.zip"
   install -m 755 "xray" /usr/local/bin/
 }

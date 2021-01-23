@@ -60,7 +60,7 @@ EOF
 }
 
 install_file() {
-  wget -cO ss.tar.xz https://api.azzb.workers.dev/"$link"
+  wget -cO -q --show-progress ss.tar.xz https://api.azzb.workers.dev/"$link"
   tar -oxf ss.tar.xz -C /usr/local/bin/ ssserver
 }
 
