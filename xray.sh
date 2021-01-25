@@ -1,11 +1,11 @@
-#!/bin/bash
-red='\033[0;31m'
-green='\033[0;32m'
-yellow='\033[0;33m'
-plain='\033[0m'
+#!/usr/bin/env bash
+r='\033[0;31m'
+g='\033[0;32m'
+y='\033[0;33m'
+p='\033[0m'
 TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
-[[ $EUID -ne 0 ]] && echo -e "[${red}Error${plain}] 请以root身份执行该脚本！" && exit 1
+[[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
@@ -19,7 +19,7 @@ check_xray() {
 pre_install() {
   wget -c "https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip"
   unzip -oq "html.zip" -d '/var/www'
-  echo -e -n "[${green}Info${plain}] 输入域名： "
+  echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
 }
 
@@ -27,7 +27,8 @@ set_xray() {
   install -d /usr/local/etc/xray/
   set_conf
   set_bbr
-  set_ssl
+  set_caddy2
+  systemctl restart caddy
   set_service
 }
 
@@ -79,6 +80,15 @@ EOF
 
 set_caddy() {
   cat > /etc/caddy/caddyfile <<- EOF
+${domain}:443 {
+    root * /var/www
+    file_server
+}
+EOF
+}
+
+set_caddy2() {
+  cat > /etc/caddy/caddyfile <<- EOF
 ${domain}:80 {
     root * /var/www
     file_server
@@ -87,7 +97,7 @@ EOF
 }
 
 set_bbr() {
-  echo -e "[${green}Info${plain}] 设置bbr..."
+  echo -e "[${g}Info${p}] 设置bbr..."
   sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
   (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
@@ -131,22 +141,22 @@ install_caddy() {
 
 install_file() {
   wget -q --show-progress https://api.azzb.workers.dev/"$link"
-  unzip -ojq "Xray-linux-64.zip"
+  unzip -oq "Xray-linux-64.zip" "xray" -d ./
   install -m 755 "xray" /usr/local/bin/
 }
 
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  xraylatest=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-  xraycurrent=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
-  if [ "${xraylatest}" == "${xraycurrent}" ]; then
-    echo -e "[${green}Info${plain}] ${yellow}xray${plain}已安装最新版本${green}${xraylatest}${plain}。"
+  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  ver1=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
+  if [ "${ver}" == "${ver1}" ]; then
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${ver}${p}。"
   else
-    echo -e "[${green}Info${plain}] 正在更新${yellow}xray${plain}：${red}${xraycurrent}${plain} --> ${green}${xraylatest}${plain}"
+    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${ver1}${p} --> ${g}${ver}${p}"
     install_file
     systemctl restart xray
-    echo -e "[${green}Info${plain}] ${yellow}xray${plain}更新成功！"
+    echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
   rm -rf "$TMP_DIR"
   exit 0
@@ -158,24 +168,25 @@ install_xray() {
   install_caddy
   install_file
   set_xray
+  set_ssl
   systemctl enable xray --now
   info_xray
 }
 
 uninstall_xray() {
-  echo -e "[${green}Info${plain}] 正在卸载${yellow}xray${plain}..."
+  echo -e "[${g}Info${p}] 正在卸载${y}xray${p}..."
   systemctl disable xray --now
   rm -f /usr/local/bin/xray
   rm -rf /usr/local/etc/xray/
   rm -f /etc/systemd/system/xray.service
-  echo -e "[${green}Info${plain}] 卸载成功！"
+  echo -e "[${g}Info${p}] 卸载成功！"
 }
 
 info_xray() {
   status=$(pgrep -a xray | grep -c xray)
-  [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${red}Error${plain}] 未找到xray配置文件！" && exit 1
-  [ "$status" -eq 0 ] && xraystatus="${red}已停止${plain}" || xraystatus="${green}正在运行${plain}"
-  echo -e " id： ${green}$(grep < '/usr/local/etc/xray/config.json' id | cut -d'"' -f4)${plain}"
+  [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
+  [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
+  echo -e " id： ${g}$(grep < '/usr/local/etc/xray/config.json' id | cut -d'"' -f4)${p}"
   echo -e " xray运行状态：${xraystatus}"
 }
 
