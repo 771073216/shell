@@ -88,12 +88,17 @@ EOF
 }
 
 set_caddy2() {
+if [ -f /etc/ssl/xray/${domain}.crt ];then
   cat > /etc/caddy/caddyfile <<- EOF
 ${domain}:80 {
     root * /var/www
     file_server
 }
 EOF
+else
+sleep 5
+set_caddy2
+fi
 }
 
 set_bbr() {
@@ -148,10 +153,14 @@ install_file() {
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-  ver1=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
-  if [ "${ver}" == "${ver1}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${ver}${p}。"
+  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}' | tr -d .v)
+  ver1=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}' | tr -d .)
+  verc=$(echo $ver | tr -d .v)
+  ver1c=$(echo $ver1 | tr -d .v)
+  if [ "${ver1c}" -gt "${verc}" ]; then
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${ver1}${p}。"
+  elif [ "${ver1c}" -eq "${verc}" ]; then
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${ver1}${p}。"
   else
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${ver1}${p} --> ${g}${ver}${p}"
     install_file
@@ -204,9 +213,9 @@ manual() {
     systemctl restart xray
   else
     echo "cancel"
-    exit 0
   fi
   rm -rf "$TMP_DIR"
+  exit 0
 }
 
 action=$1
