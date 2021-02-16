@@ -27,6 +27,9 @@ set_xray() {
   install -d /usr/local/etc/xray/
   set_conf
   set_bbr
+  while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]
+    do sleep 1
+  done
   set_caddy2
   systemctl restart caddy
   set_service
@@ -61,8 +64,8 @@ set_conf() {
                     ],
                     "certificates": [
                         {
-                            "certificateFile": "/etc/ssl/xray/${domain}.crt",
-                            "keyFile": "/etc/ssl/xray/${domain}.key"
+                            "certificateFile": "/etc/ssl/xray/cert.pem",
+                            "keyFile": "/etc/ssl/xray/key.pem"
                         }
                     ]
                 }
@@ -88,17 +91,12 @@ EOF
 }
 
 set_caddy2() {
-if [ -f /etc/ssl/xray/${domain}.crt ];then
   cat > /etc/caddy/caddyfile <<- EOF
 ${domain}:80 {
     root * /var/www
     file_server
 }
 EOF
-else
-sleep 5
-set_caddy2
-fi
 }
 
 set_bbr() {
@@ -110,9 +108,10 @@ set_bbr() {
 }
 
 set_ssl() {
-  install -d -o nobody -g nogroup /etc/ssl/xray/
-  install -m 644 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".crt -t /etc/ssl/xray/
-  install -m 600 -o nobody -g nogroup $ssl_dir/"${domain}"/"${domain}".key -t /etc/ssl/xray/
+  mkdir /etc/ssl/xray/
+  wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
+  /root/.acme.sh/acme.sh --issue -d $domain --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --renew-hook "systemctl restart xray" --force
+  chown -R nobody:nogroup /etc/ssl/xray/
 }
 
 set_service(){
