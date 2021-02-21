@@ -29,7 +29,7 @@ rm /var/www/magisk/Magisk-*
 wget -q --show-progress -P /var/www/magisk "$link3"
 wget -q --show-progress -P /var/www/magisk "$link4"
 fi
-sed -i ''"$t1"'c "link": "'$dl1'",' /var/www/magisk/repo.json
+sed -i ''"$t1"'c "link": "'"$dl1"'",' /var/www/magisk/repo.json
 sed -i ''"$t2"'c "link": "'$dl2'"' /var/www/magisk/repo.json
-sed -i ''"$t3"'c "link": "'$dl3'"' /var/www/magisk/repo.json
-sed -i ''"$t4"'c "link": "'$dl4'",' /var/www/magisk/repo.json
+sed -i ''"$t3"'c "link": "'"$dl3"'"' /var/www/magisk/repo.json
+sed -i ''"$t4"'c "link": "'"$dl4"'",' /var/www/magisk/repo.json

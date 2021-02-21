@@ -110,7 +110,7 @@ set_bbr() {
 set_ssl() {
   mkdir /etc/ssl/xray/
   wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
-  /root/.acme.sh/acme.sh --issue -d $domain --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --force
+  /root/.acme.sh/acme.sh --issue -d "$domain" --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --force
   chown -R nobody:nogroup /etc/ssl/xray/
 }
 
@@ -154,8 +154,8 @@ update_xray() {
   cd "$TMP_DIR" || exit 1
   ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}' | tr -d .v)
   ver1=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}' | tr -d .)
-  verc=$(echo $ver | tr -d .v)
-  ver1c=$(echo $ver1 | tr -d .v)
+  verc=$(echo "$ver" | tr -d .v)
+  ver1c=$(echo "$ver1" | tr -d .v)
   if [ "${ver1c}" -gt "${verc}" ]; then
     echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${ver1}${p}。"
   elif [ "${ver1c}" -eq "${verc}" ]; then
