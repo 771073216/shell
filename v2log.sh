@@ -38,7 +38,7 @@ def() {
 
 #!/bin/bash
 apidata() {
-  xray api statsquery --server=127.0.0.1:10085 -pattern "" |
+  xray api statsquery --server=127.0.0.1:10085 |
     awk '{
         if (match($1, /name/)) {
             f=1; gsub(/^"|link",$/, "", $2);
