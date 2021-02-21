@@ -110,7 +110,7 @@ set_bbr() {
 set_ssl() {
   mkdir /etc/ssl/xray/
   wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
-  /root/.acme.sh/acme.sh --issue -d $domain --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --renew-hook "systemctl restart xray" --force
+  /root/.acme.sh/acme.sh --issue -d $domain --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --force
   chown -R nobody:nogroup /etc/ssl/xray/
 }
 
