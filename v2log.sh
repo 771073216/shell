@@ -1,4 +1,5 @@
 #!/bin/bash
+red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
@@ -25,39 +26,38 @@ def() {
     echo "$list       "
     echo "------------------------------"
   fi
-  DATA=$(apidata "$1")
-  print_sum "$DATA"
-  echo "-----------------------------"
+DATA=$(apidata $1)
+print_sum "$DATA"
+echo "-----------------------------"
 }
 
-apidata() {
-  xray api statsquery --server=127.0.0.1:10085 |
-    awk '{
+apidata () {
+    xray api statsquery -s 127.0.0.1:10085 \
+    | awk '{
         if (match($1, /name/)) {
-            f=1; gsub(/^"|link",$/, "", $2);
-            gsub(/link"$/, "", $2);
+            f=1; gsub(/^"|link.*$/, "", $2);
             split($2, p,  ">>>");
             printf "%s->%s\t", p[2],p[4];
         }
         else if (match($1, /value/) && f){ f = 0; printf "%.0f\n", $2; }
-        else if (match($0, /^{|}$/) && f) { f = 0; print 0; }
-        else if (match($0, /^{|},$/) && f) { f = 0; print 0; }
+        else if (match($0, /^{|}.*$/) && f) { f = 0; print 0; }
     }'
 }
 print_sum() {
-  DATA="$1"
-  PREFIX="$2"
-  SORTED=$(echo "$DATA" | grep "^${PREFIX}" | sort -r)
-  SUM=$(echo "$SORTED" | awk '
+    DATA="$1"
+    PREFIX="$2"
+    SORTED=$(echo "$DATA" | grep "^${PREFIX}" | sort -r)
+    SUM=$(echo "$SORTED" | awk '
         /->up/{us+=$2}
         /->down/{ds+=$2}
         END{
             printf "SUM->up:\t%.0f\nSUM->down:\t%.0f\nSUM->TOTAL:\t%.0f\n", us, ds, us+ds;
         }')
-  echo -e "${SORTED}\n${SUM}" |
-    numfmt --field=2 --suffix=B --to=iec |
-    column -t
+    echo -e "${SORTED}\n${SUM}" \
+    | numfmt --field=2 --suffix=B --to=iec \
+    | column -t
 }
+
 
 q() {
   echo "$list"
@@ -96,7 +96,7 @@ b() {
   b
 }
 
-w() {
+w(){
   echo "$list"
   echo -n "ip:"
   read -r ip
@@ -104,7 +104,7 @@ w() {
     exit 0
   fi
   tcp=$(echo "$list" | head -n "$ip" | tail -n 1 | awk '{print$2}')
-  grep < "$file" "$tcp" | grep -v udp: | awk -F':' '{print$5}' | sort | uniq -c | sort -n
+  grep < "$file" $tcp | grep -v udp: | awk -F':' '{print$5}' | sort | uniq -c | sort -n
 }
 
 t() {
