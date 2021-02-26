@@ -43,7 +43,7 @@ apidata() {
     }'
 }
 print_sum() {
-  SUM=$(echo "$DATA" | awk '
+  SUM=$(echo "$DATA" | sort -r | awk '
         /->up/{us+=$2}
         /->down/{ds+=$2}
         END{
