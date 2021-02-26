@@ -43,16 +43,13 @@ apidata() {
     }'
 }
 print_sum() {
-  DATA="$1"
-  PREFIX="$2"
-  SORTED=$(echo "$DATA" | grep "^${PREFIX}" | sort -r)
-  SUM=$(echo "$SORTED" | awk '
+  SUM=$(echo "$DATA" | awk '
         /->up/{us+=$2}
         /->down/{ds+=$2}
         END{
             printf "SUM->up:\t%.0f\nSUM->down:\t%.0f\nSUM->TOTAL:\t%.0f\n", us, ds, us+ds;
         }')
-  echo -e "${SORTED}\n${SUM}" |
+  echo -e "${DATA}\n${SUM}" |
     numfmt --field=2 --suffix=B --to=iec |
     column -t
 }
