@@ -43,13 +43,14 @@ apidata() {
     }'
 }
 print_sum() {
-  SUM=$(echo "$DATA" | sort -r | awk '
+  SORTED=$(echo "$DATA" | sort -r)
+  SUM=$(echo "$SORTED" | awk '
         /->up/{us+=$2}
         /->down/{ds+=$2}
         END{
             printf "SUM->up:\t%.0f\nSUM->down:\t%.0f\nSUM->TOTAL:\t%.0f\n", us, ds, us+ds;
         }')
-  echo -e "${DATA}\n${SUM}" |
+  echo -e "${SORTED}\n${SUM}" |
     numfmt --field=2 --suffix=B --to=iec |
     column -t
 }
@@ -58,9 +59,7 @@ q() {
   echo "$list"
   echo -n "which tcp:"
   read -r ip
-  if [ -z "$ip" ]; then
-    exit 0
-  fi
+  [ -z "$ip" ] && ip=1
   tcp=$(echo "$list" | head -n "$ip" | tail -n 1 | awk '{print$2}')
   locate=$(curl -sSL http://freeapi.ipip.net/"$tcp" | awk -F'["]' '{print$2,$4,$6,$8,$10}')
   echo -e "${yellow}$tcp   $locate${plain}"
@@ -71,33 +70,11 @@ l() {
   cat "$file"
 }
 
-b() {
-  echo "$list"
-  echo -n "ip:"
-  read -r ip
-  echo -n "1:ban 2:unban"
-  read -r ban
-  if [ -z "$ip" ]; then
-    exit 0
-  fi
-  if [ "$ban" -eq 1 ]; then
-    ufw reject from "$ip"
-    ufw reject to "$ip"
-  fi
-  if [ "$ban" -eq 2 ]; then
-    ufw delete reject from "$ip"
-    ufw delete reject to "$ip"
-  fi
-  b
-}
-
 w() {
   echo "$list"
   echo -n "ip:"
   read -r ip
-  if [ -z "$ip" ]; then
-    exit 0
-  fi
+  [ -z "$ip" ] && ip=1
   tcp=$(echo "$list" | head -n "$ip" | tail -n 1 | awk '{print$2}')
   grep < "$file" "$tcp" | grep -v udp: | awk -F':' '{print$5}' | sort | uniq -c | sort -n
 }
@@ -109,8 +86,7 @@ t() {
 action=$1
 [ -z "$1" ] && action=def
 case "$action" in
-  def | q | l | b | t | w)
+  def | q | l | t | w)
     $action
     ;;
-  *) ;;
 esac
