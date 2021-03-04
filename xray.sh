@@ -82,7 +82,7 @@ EOF
 }
 
 set_caddy() {
-  cat > /etc/caddy/caddyfile <<- EOF
+  cat > /etc/caddy/Caddyfile <<- EOF
 ${domain}:443 {
     root * /var/www
     file_server
@@ -91,7 +91,7 @@ EOF
 }
 
 set_caddy2() {
-  cat > /etc/caddy/caddyfile <<- EOF
+  cat > /etc/caddy/Caddyfile <<- EOF
 ${domain}:80 {
     root * /var/www
     file_server
@@ -172,9 +172,12 @@ update_xray() {
 
 install_xray() {
   check_xray
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
   pre_install
   install_caddy
   install_file
+  rm -rf "$TMP_DIR"
   set_xray
   set_ssl
   systemctl enable xray --now
@@ -220,7 +223,7 @@ manual() {
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install | info)
+  install | info | uninstall)
     ${action}_xray
     ;;
   -m)
