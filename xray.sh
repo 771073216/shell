@@ -45,7 +45,8 @@ set_conf() {
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid}"
+                        "id": "${uuid}",
+                        "flow": "xtls-rprx-direct"
                     }
                 ],
                 "decryption": "none",
@@ -57,8 +58,8 @@ set_conf() {
             },
             "streamSettings": {
                 "network": "tcp",
-                "security": "tls",
-                "tlsSettings": {
+                "security": "xtls",
+                "xtlsSettings": {
                     "alpn": [
                         "http/1.1"
                     ],
@@ -172,6 +173,7 @@ update_xray() {
 
 install_xray() {
   check_xray
+  set_ssl
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   pre_install
@@ -179,7 +181,6 @@ install_xray() {
   install_file
   rm -rf "$TMP_DIR"
   set_xray
-  set_ssl
   systemctl enable xray --now
   info_xray
 }
