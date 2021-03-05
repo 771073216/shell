@@ -30,7 +30,7 @@ set_xray() {
   while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]
     do sleep 1
   done
-  set_caddy2
+  sed -i s/:443/:80/g "/etc/caddy/Caddyfile"
   systemctl restart caddy
   set_service
 }
@@ -38,46 +38,46 @@ set_xray() {
 set_conf() {
   cat > /usr/local/etc/xray/config.json <<- EOF
 {
-    "inbounds": [
-        {
-            "port": 443,
-            "protocol": "vless",
-            "settings": {
-                "clients": [
-                    {
-                        "id": "${uuid}",
-                        "flow": "xtls-rprx-direct"
-                    }
-                ],
-                "decryption": "none",
-                "fallbacks": [
-                    {
-                        "dest": 80
-                    }
-                ]
-            },
-            "streamSettings": {
-                "network": "tcp",
-                "security": "xtls",
-                "xtlsSettings": {
-                    "alpn": [
-                        "http/1.1"
-                    ],
-                    "certificates": [
-                        {
-                            "certificateFile": "/etc/ssl/xray/cert.pem",
-                            "keyFile": "/etc/ssl/xray/key.pem"
-                        }
-                    ]
-                }
+  "inbounds": [
+    {
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "${uuid}",
+            "flow": "xtls-rprx-direct"
+          }
+        ],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "dest": 80
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "xtls",
+        "xtlsSettings": {
+          "alpn": [
+            "http/1.1"
+          ],
+          "certificates": [
+            {
+              "certificateFile": "/etc/ssl/xray/cert.pem",
+              "keyFile": "/etc/ssl/xray/key.pem"
             }
+          ]
         }
-    ],
-    "outbounds": [
-        {
-            "protocol": "freedom"
-        }
-    ]
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom"
+    }
+  ]
 }
 EOF
 }
@@ -85,15 +85,6 @@ EOF
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
 ${domain}:443 {
-    root * /var/www
-    file_server
-}
-EOF
-}
-
-set_caddy2() {
-  cat > /etc/caddy/Caddyfile <<- EOF
-${domain}:80 {
     root * /var/www
     file_server
 }
@@ -147,14 +138,14 @@ install_caddy() {
 install_file() {
   wget -q --show-progress https://api.azzb.workers.dev/"$link"
   unzip -oq "Xray-linux-64.zip" "xray" -d ./
-  install -m 755 "xray" /usr/local/bin/
+  mv "xray" /usr/local/bin/
 }
 
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}' | tr -d .v)
-  ver1=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}' | tr -d .)
+  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  ver1=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
   verc=$(echo "$ver" | tr -d .v)
   ver1c=$(echo "$ver1" | tr -d .v)
   if [ "${ver1c}" -gt "${verc}" ]; then
@@ -174,10 +165,10 @@ update_xray() {
 install_xray() {
   check_xray
   set_ssl
+  install_caddy
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   pre_install
-  install_caddy
   install_file
   rm -rf "$TMP_DIR"
   set_xray
