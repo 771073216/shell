@@ -4,6 +4,7 @@ yellow='\033[0;33m'
 plain='\033[0m'
 file=/var/log/xray/access.log
 list=$(grep < "$file" shadowsocks | grep -v udp: | grep accepted | awk -F'[ :]' '{print$5}' | sort | uniq -c | sort -r)
+listall=$(grep < "$file" accepted | grep -v udp: | grep -v 127.0.0.1 | awk -F'[ :]' '{print$5}' | sort | uniq -c | sort -r)
 rejected=$(grep < "$file" -c rejected)
 replyatk=$(grep < "$file" -c 'failed to read IV')
 cryptoerror=$(grep < "$file" -c 'failed to read address')
@@ -16,10 +17,8 @@ def() {
   echo -e "${yellow}connects rejected:$rejected${plain}"
   echo -e "${green}today TX data:$todaydata${plain}"
   echo -e "${green}month TX data:$data${plain}"
-  if [ -z "$list" ]; then
-    echo "no connection"
-  else
-    echo "-----------------------------"
+  echo "-----------------------------"
+  if [ -n "$list" ]; then
     echo -e "         ${green}tcp${plain}"
     echo " counts      ip"
     echo "$list       "
@@ -71,11 +70,11 @@ l() {
 }
 
 w() {
-  echo "$list"
+  echo "$listall"
   echo -n "ip:"
   read -r ip
   [ -z "$ip" ] && ip=1
-  tcp=$(echo "$list" | head -n "$ip" | tail -n 1 | awk '{print$2}')
+  tcp=$(echo "$listall" | head -n "$ip" | tail -n 1 | awk '{print$2}')
   grep < "$file" "$tcp" | grep -v udp: | awk -F':' '{print$5}' | sort | uniq -c | sort -n
 }
 
