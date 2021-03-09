@@ -102,9 +102,9 @@ set_bbr() {
 
 info_ss(){
   ip=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
-  port=$(awk -F ':' '/port/ {print$2}' ../555 | tr -d ',"')
-  passwd=$(awk -F ':' '/password/ {print$2}' ../555 | tr -d ',"')
-  method=$(awk -F ':' '/method/ {print$2}' ../555 | tr -d ',"')
+  port=$(awk -F ':' '/port/ {print$2}' /etc/shadowsocks-rust/config.json | tr -d ',"')
+  passwd=$(awk -F ':' '/password/ {print$2}' /etc/shadowsocks-rust/config.json | tr -d ',"')
+  method=$(awk -F ':' '/method/ {print$2}' /etc/shadowsocks-rust/config.json | tr -d ',"')
   echo -e "=========================="
   echo -e "ip: ${r}$ip${plain}"
   echo -e "端口：${r}$port${plain}"
