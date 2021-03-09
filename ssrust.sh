@@ -33,7 +33,7 @@ set_ss() {
     "server":"::",
     "server_port":$port,
     "password":"$passwd",
-    "method":"aes-128-gcm",
+    "method":"aes-256-gcm",
     "mode":"tcp_and_udp"
 }
 EOF
