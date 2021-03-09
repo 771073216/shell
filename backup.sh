@@ -9,9 +9,9 @@ b() {
 
 r() {
   unzip backup.zip
-  cp -r backup/www/ /var/
-  cp backup/sshd_config /etc/ssh/
-  cp -r backup/.ssh/ .
+  mv backup/www/ /var/
+  mv backup/sshd_config /etc/ssh/
+  mv backup/.ssh/ .
   rm -r backup/
   rm backup.zip
 }
