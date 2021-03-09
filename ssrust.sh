@@ -3,6 +3,7 @@ red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
+r='\033[41;37m'
 TMP_DIR="$(mktemp -du)"
 latest=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest | awk -F '"' '/tag_name/ {print $4}')
 link=https://github.com/shadowsocks/shadowsocks-rust/releases/latest/download/shadowsocks-$latest.x86_64-unknown-linux-gnu.tar.xz
@@ -32,9 +33,7 @@ set_ss() {
     "server":"::",
     "server_port":$port,
     "password":"$passwd",
-    "timeout":300,
     "method":"aes-128-gcm",
-    "nameserver":"cloudflare",
     "mode":"tcp_and_udp"
 }
 EOF
@@ -73,6 +72,7 @@ install_ss() {
   config_ss
   systemctl enable shadowsocks --now
   echo -e "[${green}Info${plain}] 完成安装！"
+  info_ss
 }
 
 get_update() {
@@ -100,6 +100,19 @@ set_bbr() {
   sysctl -p > /dev/null 2>&1
 }
 
+info_ss(){
+  ip=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
+  port=$(awk -F ':' '/port/ {print$2}' ../555 | tr -d ',"')
+  passwd=$(awk -F ':' '/password/ {print$2}' ../555 | tr -d ',"')
+  method=$(awk -F ':' '/method/ {print$2}' ../555 | tr -d ',"')
+  echo -e "=========================="
+  echo -e "ip: ${r}$ip${plain}"
+  echo -e "端口：${r}$port${plain}"
+  echo -e "密码：${r}$passwd${plain}"
+  echo -e "加密方式：${r}$method${plain}"
+  echo -e "=========================="
+}
+
 uninstall_ss() {
   echo -e "[${green}Info${plain}] 正在卸载${yellow} Shadowsocks-rust${plain}..."
   systemctl disable shadowsocks --now
@@ -112,11 +125,11 @@ uninstall_ss() {
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install | uninstall)
+  install | uninstall | info)
     ${action}_ss
     ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|uninstall]"
+    echo "使用方法：$(basename "$0") [install|uninstall|info]"
     ;;
 esac
