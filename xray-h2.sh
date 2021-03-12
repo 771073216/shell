@@ -6,7 +6,6 @@ p='\033[0m'
 TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
-ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 
@@ -16,25 +15,19 @@ check_xray() {
   fi
 }
 
-get_domain(){
-  echo -e -n "[${g}Info${p}] 输入域名： "
-  read -r domain
-}
-
 pre_install() {
   wget -c "https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip"
   unzip -oq "html.zip" -d '/var/www'
+  echo -e -n "[${g}Info${p}] 输入域名： "
+  read -r domain
+  echo -e -n "[${g}Info${p}] 输入path： "
+  read -r path
 }
 
 set_xray() {
   install -d /usr/local/etc/xray/
   set_conf
   set_bbr
-  while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]
-    do sleep 1
-  done
-  sed -i s/:443/:80/g "/etc/caddy/Caddyfile"
-  systemctl restart caddy
   set_service
 }
 
@@ -43,34 +36,24 @@ set_conf() {
 {
   "inbounds": [
     {
-      "port": 443,
+      "port": 2001,
+      "listen": "127.0.0.1",
       "protocol": "vless",
       "settings": {
         "clients": [
           {
-            "id": "${uuid}",
-            "flow": "xtls-rprx-direct"
+            "id": "${uuid}"
           }
         ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "dest": 80
-          }
-        ]
+        "decryption": "none"
       },
       "streamSettings": {
-        "network": "tcp",
-        "security": "xtls",
-        "xtlsSettings": {
-          "alpn": [
-            "http/1.1"
-          ],
-          "certificates": [
-            {
-              "certificateFile": "/etc/ssl/xray/cert.pem",
-              "keyFile": "/etc/ssl/xray/key.pem"
-            }
+        "security": "none",
+        "network": "h2",
+        "httpSettings": {
+          "path": "/${path}",
+          "host": [
+            "${domain}"
           ]
         }
       }
@@ -87,9 +70,14 @@ EOF
 
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
-${domain}:443 {
+${domain} {
     root * /var/www
     file_server
+    reverse_proxy /$path 127.0.0.1:2001 {
+        transport http {
+            versions h2c
+        }
+    }
 }
 EOF
 }
@@ -100,13 +88,6 @@ set_bbr() {
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
   (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
   sysctl -p > /dev/null 2>&1
-}
-
-set_ssl() {
-  mkdir /etc/ssl/xray/
-  wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
-  /root/.acme.sh/acme.sh --issue -d "$domain" --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --force
-  chown -R nobody:nogroup /etc/ssl/xray/
 }
 
 set_service(){
@@ -167,12 +148,10 @@ update_xray() {
 
 install_xray() {
   check_xray
-  get_domain
-  set_ssl
-  install_caddy
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   pre_install
+  install_caddy
   install_file
   rm -rf "$TMP_DIR"
   set_xray
