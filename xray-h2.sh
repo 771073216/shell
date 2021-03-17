@@ -8,7 +8,6 @@ uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
-
 check_xray() {
   if command -v "xray" > /dev/null 2>&1; then
     update_xray
@@ -16,8 +15,7 @@ check_xray() {
 }
 
 pre_install() {
-  wget -c "https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip"
-  unzip -oq "html.zip" -d '/var/www'
+  wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
   echo -e -n "[${g}Info${p}] 输入path： "
@@ -103,6 +101,10 @@ CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
+Restart=on-failure
+RestartPreventExitStatus=23
+LimitNPROC=10000
+LimitNOFILE=1000000
 
 [Install]
 WantedBy=multi-user.target
@@ -169,10 +171,13 @@ uninstall_xray() {
 }
 
 info_xray() {
+  domain=$(awk -F'"' 'NR==21 {print$2}' /usr/local/etc/xray/config.json)
+  uuid=$(awk -F'"' 'NR==10 {print$4}' /usr/local/etc/xray/config.json)
+  path=$(awk -F'"' 'NR==19 {print$4}' /usr/local/etc/xray/config.json | tr -d /)
   status=$(pgrep -a xray | grep -c xray)
   [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
   [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
-  echo -e " id： ${g}$(grep < '/usr/local/etc/xray/config.json' id | cut -d'"' -f4)${p}"
+  echo -e " ${y}分享码： vless://$uuid@$domain:2001?encryption=none&security=tls&type=http&host=$domain&path=$path${p}"
   echo -e " xray运行状态：${xraystatus}"
 }
 
@@ -206,6 +211,6 @@ case "$action" in
     ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|info|-m]"
+    echo "使用方法：$(basename "$0") [install|uninstall|info|-m]"
     ;;
 esac
