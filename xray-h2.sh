@@ -177,7 +177,7 @@ info_xray() {
   status=$(pgrep -a xray | grep -c xray)
   [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
   [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
-  echo -e " ${y}分享码： vless://$uuid@$domain:2001?encryption=none&security=tls&type=http&host=$domain&path=$path${p}"
+  echo -e " 分享码： ${y}vless://$uuid@$domain:2001?encryption=none&security=tls&type=http&host=$domain&path=$path${p}"
   echo -e " xray运行状态：${xraystatus}"
 }
 
