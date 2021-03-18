@@ -191,7 +191,6 @@ manual() {
   if ! [ "$co" = q ]; then
     link=https://github.com/XTLS/Xray-core/releases/download/$ver/Xray-linux-64.zip
     install_file
-    systemctl daemon-reload
     systemctl restart xray
   else
     echo "cancel"
