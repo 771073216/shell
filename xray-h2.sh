@@ -7,12 +7,8 @@ TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-
-check_xray() {
-  if command -v "xray" > /dev/null 2>&1; then
-    update_xray
-  fi
-}
+caddy_remote=$(wget -qO- "https://api.github.com/repos/caddyserver/caddy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+caddy_ver=$(echo "$caddy_remote" | tr -d v)
 
 pre_install() {
   wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
@@ -80,16 +76,8 @@ ${domain} {
 EOF
 }
 
-set_bbr() {
-  echo -e "[${g}Info${p}] 设置bbr..."
-  sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
-  sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
-  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
-  sysctl -p > /dev/null 2>&1
-}
-
-set_service(){
-cat > /etc/systemd/system/xray.service <<- EOF
+set_service() {
+  cat > /etc/systemd/system/xray.service <<- EOF
 [Unit]
 Description=Xray Service
 Documentation=https://github.com/xtls
@@ -111,52 +99,67 @@ WantedBy=multi-user.target
 EOF
 }
 
+set_bbr() {
+  echo -e "[${g}Info${p}] 设置bbr..."
+  sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
+  sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
+  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
+  sysctl -p > /dev/null 2>&1
+}
+
 install_caddy() {
-  if ! command -v "caddy" > /dev/null 2>&1; then
-    echo "deb [trusted=yes] https://apt.fury.io/caddy/ /" > /etc/apt/sources.list.d/caddy-fury.list
-    apt update
-    apt install caddy
-  fi
-  set_caddy
-  systemctl restart caddy
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
+  wget https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
+  dpkg -i caddy_"$caddy_ver"_linux_amd64.deb
+  rm -rf "$TMP_DIR"
 }
 
 install_file() {
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
   wget -q --show-progress https://api.azzb.workers.dev/"$link"
-  unzip -oq "Xray-linux-64.zip" "xray" -d ./
-  mv "xray" /usr/local/bin/
+  unzip -oq "Xray-linux-64.zip" "xray" -d /usr/local/bin/
+  systemctl restart xray
+  rm -rf "$TMP_DIR"
 }
 
 update_xray() {
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-  ver1=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
-  verc=$(echo "$ver" | tr -d .v)
-  ver1c=$(echo "$ver1" | tr -d .v)
-  if [ "${ver1c}" -gt "${verc}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${ver1}${p}。"
-  elif [ "${ver1c}" -eq "${verc}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${ver1}${p}。"
-  else
-    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${ver1}${p} --> ${g}${ver}${p}"
+  xray_remote=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  xray_local=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
+  remote_num=$(echo "$xray_remote" | tr -d .v)
+  local_num=$(echo "$xray_local" | tr -d .v)
+  if ! [ "${local_num}" -le "${remote_num}" ]; then
+    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${xray_local}${p} --> ${g}${xray_remote}${p}"
     install_file
-    systemctl restart xray
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
-  rm -rf "$TMP_DIR"
+  update_caddy
+}
+
+update_caddy() {
+  caddy_local=$(/usr/bin/caddy version | awk '{print$1}')
+  if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
+    echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}${caddy_local}${p} --> ${g}${caddy_remote}${p}"
+    install_caddy
+    echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
+  fi
+  if [ "${local_num}" -gt "${remote_num}" ]; then
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
+  else
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_local}${p}。"
+  fi
+  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_local}${p}。"
   exit 0
 }
 
 install_xray() {
-  check_xray
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
+  [ -f /usr/local/bin/xray ] && update_xray
   pre_install
+  set_xray
+  set_caddy
   install_caddy
   install_file
-  rm -rf "$TMP_DIR"
-  set_xray
   systemctl enable xray --now
   info_xray
 }
@@ -191,6 +194,7 @@ manual() {
   if ! [ "$co" = q ]; then
     link=https://github.com/XTLS/Xray-core/releases/download/$ver/Xray-linux-64.zip
     install_file
+    systemctl daemon-reload
     systemctl restart xray
   else
     echo "cancel"

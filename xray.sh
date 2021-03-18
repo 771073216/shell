@@ -9,14 +9,13 @@ uuid=$(cat /proc/sys/kernel/random/uuid)
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
-
 check_xray() {
   if command -v "xray" > /dev/null 2>&1; then
     update_xray
   fi
 }
 
-get_domain(){
+get_domain() {
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
 }
@@ -30,8 +29,8 @@ set_xray() {
   install -d /usr/local/etc/xray/
   set_conf
   set_bbr
-  while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]
-    do sleep 1
+  while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]; do
+    sleep 1
   done
   sed -i s/:443/:80/g "/etc/caddy/Caddyfile"
   systemctl restart caddy
@@ -109,8 +108,8 @@ set_ssl() {
   chown -R nobody:nogroup /etc/ssl/xray/
 }
 
-set_service(){
-cat > /etc/systemd/system/xray.service <<- EOF
+set_service() {
+  cat > /etc/systemd/system/xray.service <<- EOF
 [Unit]
 Description=Xray Service
 Documentation=https://github.com/xtls
