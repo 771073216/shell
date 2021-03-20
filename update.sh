@@ -34,3 +34,54 @@ update_caddy() {
   echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
   rm -rf "$TMP_DIR"
 }
+
+set_xray() {
+  cat > /usr/local/etc/xray/config.json <<- EOF
+{
+  "inbounds": [
+    {
+      "port": 2001,
+      "listen": "127.0.0.1",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "${uuid}"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "security": "none",
+        "network": "h2",
+        "httpSettings": {
+          "path": "/${path}",
+          "host": [
+            "${domain}"
+          ]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom"
+    }
+  ]
+}
+EOF
+}
+
+set_caddy() {
+  cat > /etc/caddy/Caddyfile <<- EOF
+${domain} {
+    root * /var/www
+    file_server
+    reverse_proxy /$path 127.0.0.1:2001 {
+        transport http {
+            versions h2c
+        }
+    }
+}
+EOF
+}
