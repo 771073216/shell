@@ -4,16 +4,17 @@ g='\033[0;32m'
 y='\033[0;33m'
 p='\033[0m'
 TMP_DIR="$(mktemp -du)"
-uuid=$(cat /proc/sys/kernel/random/uuid)
+h2conf=/usr/local/etc/xray/h2.json
+wsconf=/usr/local/etc/xray/ws.json
+grpcconf=/usr/local/etc/xray/grpc.json
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 pre_install() {
+  install -m 755 "$(basename "$0")" /usr/local/bin/xray-h2.sh
   wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
-  echo -e -n "[${g}Info${p}] 输入path： "
-  read -r path
 }
 
 set_xray() {
@@ -25,17 +26,19 @@ set_xray() {
 }
 
 set_conf() {
-  cat > /usr/local/etc/xray/config.json <<- EOF
+  h2uuid=$(cat /proc/sys/kernel/random/uuid)
+  cat > $h2conf <<- EOF
 {
   "inbounds": [
     {
-      "port": 2001,
+      "port": 2003,
       "listen": "127.0.0.1",
       "protocol": "vless",
+      "tag": "h2",
       "settings": {
         "clients": [
           {
-            "id": "${uuid}"
+            "id": "${h2uuid}"
           }
         ],
         "decryption": "none"
@@ -44,35 +47,120 @@ set_conf() {
         "security": "none",
         "network": "h2",
         "httpSettings": {
-          "path": "/${path}",
+          "path": "/vlh2",
           "host": [
             "${domain}"
           ]
         }
       }
     }
-  ],
-  "outbounds": [
+  ]
+}
+EOF
+  wsuuid=$(cat /proc/sys/kernel/random/uuid)
+  cat > $wsconf <<- EOF
+{
+  "inbounds": [
     {
-      "protocol": "freedom"
+      "port": 2001,
+      "listen": "127.0.0.1",
+      "protocol": "vmess",
+      "tag": "ws",
+      "settings": {
+        "clients": [
+          {
+            "id": "${wsuuid}"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vmws"
+        }
+      }
     }
   ]
+}
+EOF
+  grpcuuid=$(cat /proc/sys/kernel/random/uuid)
+  cat > $grpcconf <<- EOF
+{
+  "inbounds": [
+    {
+      "port": 2002,
+      "listen": "127.0.0.1",
+      "protocol": "vless",
+      "tag": "grpc",
+      "settings": {
+        "clients": [
+          {
+            "id": "${grpcuuid}"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "grpcSettings": {
+          "serviceName": "grpc"
+        }
+      }
+    }
+  ]
+}
+EOF
+  cat > /usr/local/etc/xray/outbounds.json <<- EOF
+{
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    },
+    {
+      "tag": "blocked",
+      "protocol": "blackhole"
+    }
+  ]
+}
+EOF
+  cat > /usr/local/etc/xray/routing.json <<- EOF
+{
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "type": "field",
+        "ip": [
+          "geoip:private"
+        ],
+        "outboundTag": "blocked"
+      }
+    ]
+  }
 }
 EOF
 }
 
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
+cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
+    @ws {
+        path /vmws
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    @grpc protocol grpc
+    reverse_proxy @ws http://127.0.0.1:2001
+    reverse_proxy @grpc h2c://127.0.0.1:2002
+    reverse_proxy /vlh2 h2c://127.0.0.1:2003
     root * /var/www
     file_server
-    reverse_proxy /$path 127.0.0.1:2001 {
-        transport http {
-            versions h2c
-        }
-    }
 }
 EOF
+  EOF
 }
 
 set_service() {
@@ -87,7 +175,7 @@ User=nobody
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray run -confdir /usr/local/etc/xray/
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
@@ -162,8 +250,8 @@ update_caddy() {
   exit 0
 }
 
-set_cron(){
-echo "0 4 * * * /usr/local/bin/xray-h2.sh" | crontab -
+set_cron() {
+  echo "0 4 * * * /usr/local/bin/xray-h2.sh" | crontab -
 }
 
 install_xray() {
@@ -188,13 +276,33 @@ uninstall_xray() {
 }
 
 info_xray() {
-  domain=$(awk -F'"' 'NR==21 {print$2}' /usr/local/etc/xray/config.json)
-  uuid=$(awk -F'"' 'NR==10 {print$4}' /usr/local/etc/xray/config.json)
-  path=$(awk -F'"' 'NR==19 {print$4}' /usr/local/etc/xray/config.json | tr -d /)
+  h2uuid=$(awk -F'"' '/"id"/ {print$4}' $h2conf)
+  h2path=$(awk -F'"' '/"path"/ {print$4}' $h2conf | tr -d /)
+  domain=$(grep -A 1 host $h2conf | grep -v host | awk -F'"' '{print$2}')
   status=$(pgrep -a xray | grep -c xray)
-  [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
+  vmlink=$(
+    cat << EOF
+{
+  "v": "2",
+  "ps": "",
+  "add": "${domain}",
+  "port": "443",
+  "id": "${wsuuid}",
+  "aid": "0",
+  "net": "ws",
+  "type": "none",
+  "host": "",
+  "path": "vmws",
+  "tls": "tls"
+}
+EOF
+  )
   [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
-  echo -e " 分享码： ${y}vless://$uuid@$domain:2001?encryption=none&security=tls&type=http&host=$domain&path=$path${p}"
+  echo
+  echo -e " ${y}(延迟更低)${p} 分享码1： ${y}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
+  echo
+  echo -e " ${y}(ios专用)${p} 分享码2： ${r}vmess://$(echo "$vmlink" | base64)${p}"
+  echo
   echo -e " xray运行状态：${xraystatus}"
 }
 
@@ -216,8 +324,8 @@ manual() {
   exit 0
 }
 
-update_online(){
-bash -c "$(wget -O- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
+update_online() {
+  bash -c "$(wget -O- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
 }
 
 action=$1
