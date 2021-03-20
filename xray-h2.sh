@@ -7,8 +7,6 @@ TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-caddy_remote=$(wget -qO- "https://api.github.com/repos/caddyserver/caddy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-caddy_ver=$(echo "$caddy_remote" | tr -d v)
 
 pre_install() {
   wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
@@ -20,6 +18,7 @@ pre_install() {
 
 set_xray() {
   install -d /usr/local/etc/xray/
+  install -d /usr/local/share/xray/
   set_conf
   set_bbr
   set_service
@@ -110,6 +109,8 @@ set_bbr() {
 install_caddy() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
+  caddy_remote=$(wget -qO- "https://api.github.com/repos/caddyserver/caddy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  caddy_ver=$(echo "$caddy_remote" | tr -d v)
   wget https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
   dpkg -i caddy_"$caddy_ver"_linux_amd64.deb
   rm -rf "$TMP_DIR"
@@ -119,7 +120,9 @@ install_file() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress https://api.azzb.workers.dev/"$link"
-  unzip -oq "Xray-linux-64.zip" "xray" -d /usr/local/bin/
+  unzip -oq "Xray-linux-64.zip"
+  mv xray /usr/local/bin/
+  mv geoip.dat geosite.dat /usr/local/share/xray/
   systemctl restart xray
   rm -rf "$TMP_DIR"
 }
@@ -138,10 +141,16 @@ update_xray() {
 }
 
 update_caddy() {
+  caddy_remote=$(wget -qO- "https://api.github.com/repos/caddyserver/caddy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
+  caddy_ver=$(echo "$caddy_remote" | tr -d v)
   caddy_local=$(/usr/bin/caddy version | awk '{print$1}')
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}${caddy_local}${p} --> ${g}${caddy_remote}${p}"
-    install_caddy
+    mkdir "$TMP_DIR"
+    cd "$TMP_DIR" || exit 1
+    wget https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
+    dpkg -i caddy_"$caddy_ver"_linux_amd64.deb
+    rm -rf "$TMP_DIR"
     echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
   fi
   if [ "${local_num}" -gt "${remote_num}" ]; then
@@ -153,6 +162,10 @@ update_caddy() {
   exit 0
 }
 
+set_cron(){
+echo "0 4 * * * /usr/local/bin/xray-h2.sh" | crontab -
+}
+
 install_xray() {
   [ -f /usr/local/bin/xray ] && update_xray
   pre_install
@@ -161,6 +174,7 @@ install_xray() {
   install_caddy
   install_file
   systemctl enable xray --now
+  set_cron
   info_xray
 }
 
@@ -202,6 +216,10 @@ manual() {
   exit 0
 }
 
+update_online(){
+bash -c "$(wget -O- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
+}
+
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
@@ -210,6 +228,9 @@ case "$action" in
     ;;
   -m)
     manual
+    ;;
+  update)
+    update_online
     ;;
   *)
     echo "参数错误！ [${action}]"
