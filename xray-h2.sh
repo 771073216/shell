@@ -20,7 +20,7 @@ pre_install() {
     apt install unzip -y
   fi
   install -m 755 "$(basename "$0")" /usr/local/bin/xray.sh
-  wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
+  wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
 }
@@ -152,6 +152,7 @@ EOF
 }
 
 set_caddy() {
+  mkdir /etc/caddy/
   cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
     @ws {
@@ -205,7 +206,7 @@ install_caddy() {
   cd "$TMP_DIR" || exit 1
   caddy_remote=$(wget -qO- "https://api.github.com/repos/caddyserver/caddy/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
   caddy_ver=$(echo "$caddy_remote" | tr -d v)
-  wget https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
+  wget -q --show-progress https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
   dpkg -i caddy_"$caddy_ver"_linux_amd64.deb
   rm -rf "$TMP_DIR"
 }
@@ -242,7 +243,7 @@ update_caddy() {
     echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}${caddy_local}${p} --> ${g}${caddy_remote}${p}"
     mkdir "$TMP_DIR"
     cd "$TMP_DIR" || exit 1
-    wget https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
+    wget -q --show-progress https://github.com/caddyserver/caddy/releases/download/"$caddy_remote"/caddy_"$caddy_ver"_linux_amd64.deb
     dpkg -i caddy_"$caddy_ver"_linux_amd64.deb
     rm -rf "$TMP_DIR"
     echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
@@ -331,7 +332,7 @@ manual() {
 }
 
 update_online() {
-  bash -c "$(wget -O- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
+  bash -c "$(wget -qO- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
 }
 
 action=$1
