@@ -11,7 +11,7 @@ grpcconf=/usr/local/etc/xray/grpc.json
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 pre_install() {
-  install -m 755 "$(basename "$0")" /usr/local/bin/xray-h2.sh
+  install -m 755 "$(basename "$0")" /usr/local/bin/xray.sh
   wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
@@ -145,7 +145,6 @@ EOF
 
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
-cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
     @ws {
         path /vmws
@@ -160,7 +159,6 @@ ${domain} {
     file_server
 }
 EOF
-  EOF
 }
 
 set_service() {
@@ -207,7 +205,7 @@ install_caddy() {
 install_file() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://api.azzb.workers.dev/"$link"
+  wget -q --show-progress "$link"
   unzip -oq "Xray-linux-64.zip"
   mv xray /usr/local/bin/
   mv geoip.dat geosite.dat /usr/local/share/xray/
@@ -251,7 +249,7 @@ update_caddy() {
 }
 
 set_cron() {
-  echo "0 4 * * * /usr/local/bin/xray-h2.sh" | crontab -
+  echo "0 4 */3 * * /usr/local/bin/xray.sh" | crontab -
 }
 
 install_xray() {
