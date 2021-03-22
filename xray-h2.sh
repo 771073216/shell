@@ -11,6 +11,14 @@ grpcconf=/usr/local/etc/xray/grpc.json
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 pre_install() {
+  if ! command -v "wget" > /dev/null 2>&1; then
+    echo -e "[${g}Info${p}] installing wget"
+    apt install wget -y
+  fi
+  if ! command -v "unzip" > /dev/null 2>&1; then
+    echo -e "[${g}Info${p}] installing unzip"
+    apt install unzip -y
+  fi
   install -m 755 "$(basename "$0")" /usr/local/bin/xray.sh
   wget "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
