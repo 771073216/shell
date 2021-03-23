@@ -19,7 +19,6 @@ pre_install() {
     echo -e "[${g}Info${p}] installing unzip"
     apt install unzip -y
   fi
-  install -m 755 "$(basename "$0")" /usr/local/bin/xray.sh
   wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
@@ -257,10 +256,6 @@ update_caddy() {
   exit 0
 }
 
-set_cron() {
-  echo "0 4 * * * /usr/local/bin/xray.sh update" | crontab -
-}
-
 install_xray() {
   [ -f /usr/local/bin/xray ] && update_xray
   pre_install
@@ -333,10 +328,6 @@ manual() {
   exit 0
 }
 
-update_online() {
-  bash -c "$(wget -qO- https://raw.githubusercontent.com/771073216/shell/master/update.sh)" 2>&1 | tee /tmp/update.log
-}
-
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
@@ -345,9 +336,6 @@ case "$action" in
     ;;
   -m)
     manual
-    ;;
-  update)
-    update_online
     ;;
   *)
     echo "参数错误！ [${action}]"
