@@ -227,7 +227,7 @@ update_xray() {
   xray_local=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
   remote_num=$(echo "$xray_remote" | tr -d .v)
   local_num=$(echo "$xray_local" | tr -d .v)
-  if ! [ "${local_num}" -le "${remote_num}" ]; then
+  if [ "${local_num}" -lt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${xray_local}${p} --> ${g}${xray_remote}${p}"
     install_file
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
@@ -258,7 +258,7 @@ update_caddy() {
 }
 
 set_cron() {
-  echo "0 4 */3 * * /usr/local/bin/xray.sh update" | crontab -
+  echo "0 4 * * * /usr/local/bin/xray.sh update" | crontab -
 }
 
 install_xray() {
