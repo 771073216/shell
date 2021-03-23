@@ -258,7 +258,7 @@ update_caddy() {
 }
 
 set_cron() {
-  echo "0 4 */3 * * /usr/local/bin/xray.sh" | crontab -
+  echo "0 4 */3 * * /usr/local/bin/xray.sh update" | crontab -
 }
 
 install_xray() {
@@ -306,9 +306,11 @@ EOF
   )
   [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
   echo
-  echo -e " ${y}(延迟更低)${p} 分享码1： ${y}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
+  echo -e " ${y}(延迟更低)${p} 分享码1："
+  echo -e " ${r}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
   echo
-  echo -e " ${y}(ios专用)${p} 分享码2： ${r}vmess://$(echo "$vmlink" | base64)${p}"
+  echo -e " ${y}(ios专用)${p} 分享码2："
+  echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
   echo -e " xray运行状态：${xraystatus}"
 }
