@@ -3,7 +3,7 @@ TMP_DIR="$(mktemp -du)"
 h2conf=/usr/local/etc/xray/h2.json
 wsconf=/usr/local/etc/xray/ws.json
 grpcconf=/usr/local/etc/xray/grpc.json
-date
+echo "time:$(date)"
 
 update_xray() {
   mkdir "$TMP_DIR"
@@ -33,7 +33,7 @@ update_caddy() {
   rm -rf "$TMP_DIR"
 }
 
-set_xray() {
+h2_conf() {
   h2uuid=$(awk -F'"' '/"id"/ {print$4}' $h2conf)
   h2path=$(awk -F'"' '/"path"/ {print$4}' $h2conf | tr -d /)
   domain=$(grep -A 1 host $h2conf | grep -v host | awk -F'"' '{print$2}')
@@ -67,6 +67,9 @@ set_xray() {
   ]
 }
 EOF
+}
+
+ws_conf(){
   wsuuid=$(awk -F'"' '/"id"/ {print$4}' $wsconf)
   wspath=$(awk -F'"' '/"path"/ {print$4}' $wsconf | tr -d /)
   cat > $wsconf <<- EOF
@@ -95,6 +98,9 @@ EOF
   ]
 }
 EOF
+}
+
+grpc_conf(){
   grpcuuid=$(awk -F'"' '/"id"/ {print$4}' $grpcconf)
   cat > $grpcconf <<- EOF
 {
@@ -122,7 +128,6 @@ EOF
   ]
 }
 EOF
-  systemctl restart xray
 }
 
 set_caddy() {
@@ -144,5 +149,13 @@ ${domain} {
     file_server
 }
 EOF
+  systemctl restart caddy
+}
+
+restart_xray(){
+  systemctl restart xray
+}
+
+restart_caddy(){
   systemctl restart caddy
 }
