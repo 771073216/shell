@@ -279,9 +279,12 @@ uninstall_xray() {
 
 info_xray() {
   h2uuid=$(awk -F'"' '/"id"/ {print$4}' $h2conf)
+  wsuuid=$(awk -F'"' '/"id"/ {print$4}' $wsconf)
+  grpcuuid=$(awk -F'"' '/"id"/ {print$4}' $grpcconf)
   h2path=$(awk -F'"' '/"path"/ {print$4}' $h2conf | tr -d /)
   domain=$(grep -A 1 host $h2conf | grep -v host | awk -F'"' '{print$2}')
-  status=$(pgrep -a xray | grep -c xray)
+  xraystatus=$(pgrep -a xray | grep -c xray)
+  caddystatus=$(pgrep -a caddy | grep -c caddy)
   vmlink=$(
     cat << EOF
 {
@@ -299,15 +302,22 @@ info_xray() {
 }
 EOF
   )
-  [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
+  [ "$xraystatus" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
+  [ "$caddystatus" -eq 0 ] && caddystatus="${r}已停止${p}" || caddystatus="${g}正在运行${p}"
   echo
-  echo -e " ${y}(延迟更低)${p} 分享码1："
+  echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
   echo -e " ${r}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
   echo
-  echo -e " ${y}(ios专用)${p} 分享码2："
+  echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
+  echo -e " ${r}vless://${grpcuuid}@${domain}:443?encryption=none&security=tls&type=grpc${p}"
+  echo
+  echo -e " ${y}(ios专用~360ms)${p} 分享码3："
   echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
+  echo -e "${g}(win)v2rayN下载链接:https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
+  echo -e "${g}(android)v2rayNG下载链接:https://github.com/2dust/v2rayNG/releases/download/1.5.17/v2rayNG_1.5.17_arm64-v8a.apk${p}"
   echo -e " xray运行状态：${xraystatus}"
+  echo -e " caddy运行状态：${caddystatus}"
 }
 
 manual() {
