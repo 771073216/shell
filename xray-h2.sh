@@ -314,10 +314,10 @@ EOF
   echo -e " ${y}(ios专用~360ms)${p} 分享码3："
   echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
-  echo -e "${g}(win)v2rayN下载链接:https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
-  echo -e "${g}(android)v2rayNG下载链接:https://github.com/2dust/v2rayNG/releases/download/1.5.17/v2rayNG_1.5.17_arm64-v8a.apk${p}"
-  echo -e " xray运行状态：${xraystatus}"
-  echo -e " caddy运行状态：${caddystatus}"
+  echo -e "(win)v2rayN下载链接:${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
+  echo -e "(android)v2rayNG下载链接:${g}https://github.com/2dust/v2rayNG/releases/download/1.5.17/v2rayNG_1.5.17_arm64-v8a.apk${p}"
+  echo
+  echo -e " xray运行状态：${xraystatus} caddy运行状态：${caddystatus}"
 }
 
 manual() {
