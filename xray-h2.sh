@@ -11,28 +11,14 @@ grpcconf=/usr/local/etc/xray/grpc.json
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 
 pre_install() {
-  if ! command -v "wget" > /dev/null 2>&1; then
-    echo -e "[${g}Info${p}] installing wget"
-    apt install wget -y
-  fi
-  if ! command -v "unzip" > /dev/null 2>&1; then
-    echo -e "[${g}Info${p}] installing unzip"
-    apt install unzip -y
-  fi
-  wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
+  apt install wget unzip -y > /dev/null 2>&1
+  wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
+  mkdir /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/
 }
 
 set_xray() {
-  install -d /usr/local/etc/xray/
-  install -d /usr/local/share/xray/
-  set_conf
-  set_bbr
-  set_service
-}
-
-set_conf() {
   h2uuid=$(cat /proc/sys/kernel/random/uuid)
   cat > $h2conf <<- EOF
 {
@@ -151,7 +137,6 @@ EOF
 }
 
 set_caddy() {
-  mkdir /etc/caddy/
   cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
     @ws {
@@ -261,10 +246,11 @@ install_xray() {
   pre_install
   set_xray
   set_caddy
+  set_service
   install_caddy
   install_file
   systemctl enable xray --now
-  set_cron
+  set_bbr
   info_xray
 }
 
