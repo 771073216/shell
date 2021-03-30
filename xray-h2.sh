@@ -244,10 +244,10 @@ update_caddy() {
 install_xray() {
   [ -f /usr/local/bin/xray ] && update_xray
   pre_install
-  set_xray
+  install_caddy
   set_caddy
   set_service
-  install_caddy
+  set_xray
   install_file
   systemctl enable xray --now
   set_bbr
