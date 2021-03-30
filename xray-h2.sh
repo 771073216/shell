@@ -139,13 +139,8 @@ EOF
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
-    @ws {
-        path /vmws
-        header Connection *Upgrade*
-        header Upgrade websocket
-    }
     @grpc protocol grpc
-    reverse_proxy @ws http://127.0.0.1:2001
+    reverse_proxy /vmws http://127.0.0.1:2001
     reverse_proxy @grpc h2c://127.0.0.1:2002
     reverse_proxy /vlh2 h2c://127.0.0.1:2003
     root * /var/www
