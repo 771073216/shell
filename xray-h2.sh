@@ -14,7 +14,7 @@ pre_install() {
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
   apt install wget unzip -y > /dev/null 2>&1
-  mkdir /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/ /var/www/
+  mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/ /var/www/
   wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
 }
 
