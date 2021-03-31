@@ -302,8 +302,6 @@ EOF
 }
 
 manual() {
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
   ver=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/tags | awk -F '"' '/name/ {print $4}' | head -n 1)
   echo "$ver"
   echo "correct?  q = quit "
@@ -315,7 +313,6 @@ manual() {
   else
     echo "cancel"
   fi
-  rm -rf "$TMP_DIR"
   exit 0
 }
 
