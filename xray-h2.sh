@@ -289,7 +289,7 @@ EOF
   echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
   echo -e " ${r}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
   echo
-  echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
+  echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG](bing蜜汁错误)${p} 分享码2："
   echo -e " ${r}vless://${grpcuuid}@${domain}:443?encryption=none&security=tls&type=grpc${p}"
   echo
   echo -e " ${y}(ios专用~360ms)${p} 分享码3："
