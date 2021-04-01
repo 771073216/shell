@@ -9,6 +9,8 @@ wsconf=/usr/local/etc/xray/ws.json
 grpcconf=/usr/local/etc/xray/grpc.json
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
+link1=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+link2=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
 
 pre_install() {
   echo -e -n "[${g}Info${p}] 输入域名： "
@@ -194,8 +196,9 @@ install_file() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress "$link"
-  unzip -oq "Xray-linux-64.zip"
-  mv xray /usr/local/bin/
+  wget -q --show-progress "$link1"
+  wget -q --show-progress "$link2"
+  unzip -oq "Xray-linux-64.zip" -d /usr/local/bin/
   mv geoip.dat geosite.dat /usr/local/share/xray/
   systemctl restart xray
   rm -rf "$TMP_DIR"
