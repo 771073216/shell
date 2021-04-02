@@ -196,10 +196,9 @@ install_file() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress "$link"
-  wget -q --show-progress "$link1"
-  wget -q --show-progress "$link2"
-  unzip -oq "Xray-linux-64.zip" -d /usr/local/bin/
-  mv geoip.dat geosite.dat /usr/local/share/xray/
+  wget -q --show-progress "$link1" -O /usr/local/share/xray/geoip.dat
+  wget -q --show-progress "$link2" -O /usr/local/share/xray/geosite.dat
+  unzip -oq "Xray-linux-64.zip" xray -d /usr/local/bin/
   systemctl restart xray
   rm -rf "$TMP_DIR"
 }
