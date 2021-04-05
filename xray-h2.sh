@@ -291,14 +291,14 @@ EOF
   echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
   echo -e " ${r}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}${p}"
   echo
-  echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG](bing蜜汁错误)${p} 分享码2："
+  echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
   echo -e " ${r}vless://${grpcuuid}@${domain}:443?encryption=none&security=tls&type=grpc${p}"
   echo
   echo -e " ${y}(ios专用~360ms)${p} 分享码3："
   echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
   echo -e "(win)v2rayN下载链接:${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
-  echo -e "(android)v2rayNG下载链接:${g}https://github.com/2dust/v2rayNG/releases/download/1.5.17/v2rayNG_1.5.17_arm64-v8a.apk${p}"
+  echo -e "(android)v2rayNG下载链接:${g}https://github.com/2dust/v2rayNG/releases/download/1.6.3/v2rayNG_1.6.3_arm64-v8a.apk${p}"
   echo
   echo -e " xray运行状态：${xraystatus} caddy运行状态：${caddystatus}"
 }
