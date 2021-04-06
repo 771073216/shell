@@ -197,7 +197,6 @@ install_file() {
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress "$link"
   unzip -oq "Xray-linux-64.zip" xray -d /usr/local/bin/
-  systemctl restart xray
   rm -rf "$TMP_DIR"
 }
 
@@ -215,6 +214,7 @@ update_xray() {
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${xray_local}${p} --> ${g}${xray_remote}${p}"
     install_file
     install_geo
+    systemctl restart xray
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
   update_caddy
@@ -251,7 +251,7 @@ install_xray() {
   set_xray
   install_file
   install_geo
-  systemctl enable xray
+  systemctl enable xray --now
   set_bbr
   info_xray
 }
@@ -295,7 +295,7 @@ EOF
   [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
   echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
-  echo -e " ${r}vless://${h2uuid}@${domain}:443?security=tls&type=http&host=${domain}&path=${h2path}${p}"
+  echo -e " ${r}vless://${h2uuid}@${domain}:443?security=tls&type=http&host=${domain}&path=${h2path}#h2${p}"
   echo
   echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
   echo -e " ${r}vless://${grpcuuid}@${domain}:443?security=tls&type=grpc&path=grpc#grpc${p}"
