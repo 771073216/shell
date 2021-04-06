@@ -26,7 +26,7 @@ set_xray() {
 {
   "inbounds": [
     {
-      "port": 2003,
+      "port": 2001,
       "listen": "127.0.0.1",
       "protocol": "vless",
       "tag": "h2",
@@ -57,7 +57,7 @@ EOF
 {
   "inbounds": [
     {
-      "port": 2001,
+      "port": 2002,
       "listen": "127.0.0.1",
       "protocol": "vmess",
       "tag": "ws",
@@ -84,7 +84,7 @@ EOF
 {
   "inbounds": [
     {
-      "port": 2002,
+      "port": 2003,
       "listen": "127.0.0.1",
       "protocol": "vless",
       "tag": "grpc",
@@ -142,9 +142,9 @@ set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
 ${domain} {
     @grpc protocol grpc
-    reverse_proxy /vmws http://127.0.0.1:2001
-    reverse_proxy @grpc h2c://127.0.0.1:2002
-    reverse_proxy /vlh2 h2c://127.0.0.1:2003
+    reverse_proxy /vlh2 h2c://127.0.0.1:2001
+    reverse_proxy /vmws http://127.0.0.1:2002
+    reverse_proxy @grpc h2c://127.0.0.1:2003
     root * /var/www
     file_server
 }
@@ -196,11 +196,14 @@ install_file() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress "$link"
-  wget -q --show-progress "$link1" -O /usr/local/share/xray/geoip.dat
-  wget -q --show-progress "$link2" -O /usr/local/share/xray/geosite.dat
   unzip -oq "Xray-linux-64.zip" xray -d /usr/local/bin/
   systemctl restart xray
   rm -rf "$TMP_DIR"
+}
+
+install_geo() {
+  wget -q --show-progress "$link1" -O /usr/local/share/xray/geoip.dat
+  wget -q --show-progress "$link2" -O /usr/local/share/xray/geosite.dat
 }
 
 update_xray() {
@@ -211,6 +214,7 @@ update_xray() {
   if [ "${local_num}" -lt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${xray_local}${p} --> ${g}${xray_remote}${p}"
     install_file
+    install_geo
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
   update_caddy
@@ -246,7 +250,8 @@ install_xray() {
   set_service
   set_xray
   install_file
-  systemctl enable xray --now
+  install_geo
+  systemctl enable xray
   set_bbr
   info_xray
 }
@@ -265,7 +270,7 @@ info_xray() {
   wsuuid=$(awk -F'"' '/"id"/ {print$4}' $wsconf)
   grpcuuid=$(awk -F'"' '/"id"/ {print$4}' $grpcconf)
   h2path=$(awk -F'"' '/"path"/ {print$4}' $h2conf | tr -d /)
-  domain=$(grep -A 1 host $h2conf | grep -v host | awk -F'"' '{print$2}')
+  domain=$(awk 'NR==1 {print$1}' /etc/caddy/Caddyfile)
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
   vmlink=$(
@@ -285,8 +290,9 @@ info_xray() {
 }
 EOF
   )
-  [ "$xraystatus" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
-  [ "$caddystatus" -eq 0 ] && caddystatus="${r}已停止${p}" || caddystatus="${g}正在运行${p}"
+  echo
+  [ "$xraystatus" -eq 0 ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
+  [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
   echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
   echo -e " ${r}vless://${h2uuid}@${domain}:443?security=tls&type=http&host=${domain}&path=${h2path}${p}"
@@ -299,8 +305,6 @@ EOF
   echo
   echo -e "(win)v2rayN下载链接:${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
   echo -e "(android)v2rayNG下载链接:${g}https://github.com/2dust/v2rayNG/releases/download/1.6.3/v2rayNG_1.6.3_arm64-v8a.apk${p}"
-  echo
-  echo -e " xray运行状态：${xraystatus} caddy运行状态：${caddystatus}"
 }
 
 manual() {
