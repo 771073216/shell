@@ -4,13 +4,13 @@ g='\033[0;32m'
 y='\033[0;33m'
 p='\033[0m'
 TMP_DIR="$(mktemp -du)"
-h2conf=/usr/local/etc/xray/h2.json
-wsconf=/usr/local/etc/xray/ws.json
-grpcconf=/usr/local/etc/xray/grpc.json
-[[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
+h2conf=/usr/local/etc/xray/h2.yaml
+wsconf=/usr/local/etc/xray/ws.yaml
+grpcconf=/usr/local/etc/xray/grpc.yaml
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 link1=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
 link2=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+[[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
 pre_install() {
   echo -e -n "[${g}Info${p}] 输入域名： "
@@ -23,118 +23,70 @@ pre_install() {
 set_xray() {
   h2uuid=$(cat /proc/sys/kernel/random/uuid)
   cat > $h2conf <<- EOF
-{
-  "inbounds": [
-    {
-      "port": 2001,
-      "listen": "127.0.0.1",
-      "protocol": "vless",
-      "tag": "h2",
-      "settings": {
-        "clients": [
-          {
-            "id": "${h2uuid}"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "security": "none",
-        "network": "h2",
-        "httpSettings": {
-          "path": "/vlh2",
-          "host": [
-            "${domain}"
-          ]
-        }
-      }
-    }
-  ]
-}
+inbounds:
+- port: 2001
+  listen: 127.0.0.1
+  protocol: vless
+  tag: h2
+  settings:
+    clients:
+    - id: "${h2uuid}"
+    decryption: none
+  streamSettings:
+    security: none
+    network: h2
+    httpSettings:
+      path: "/vlh2"
+      host:
+      - "${domain}"
 EOF
   wsuuid=$(cat /proc/sys/kernel/random/uuid)
   cat > $wsconf <<- EOF
-{
-  "inbounds": [
-    {
-      "port": 2002,
-      "listen": "127.0.0.1",
-      "protocol": "vmess",
-      "tag": "ws",
-      "settings": {
-        "clients": [
-          {
-            "id": "${wsuuid}"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none",
-        "wsSettings": {
-          "path": "/vmws"
-        }
-      }
-    }
-  ]
-}
+inbounds:
+- port: 2002
+  listen: 127.0.0.1
+  protocol: vmess
+  tag: ws
+  settings:
+    clients:
+    - id: "${wsuuid}"
+  streamSettings:
+    network: ws
+    security: none
+    wsSettings:
+      path: "/vmws"
 EOF
   grpcuuid=$(cat /proc/sys/kernel/random/uuid)
   cat > $grpcconf <<- EOF
-{
-  "inbounds": [
-    {
-      "port": 2003,
-      "listen": "127.0.0.1",
-      "protocol": "vless",
-      "tag": "grpc",
-      "settings": {
-        "clients": [
-          {
-            "id": "${grpcuuid}"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "grpc",
-        "grpcSettings": {
-          "serviceName": "grpc"
-        }
-      }
-    }
-  ]
-}
+inbounds:
+- port: 2003
+  listen: 127.0.0.1
+  protocol: vless
+  tag: grpc
+  settings:
+    clients:
+    - id: "${grpcuuid}"
+    decryption: none
+  streamSettings:
+    network: grpc
+    grpcSettings:
+      serviceName: grpc
 EOF
-  cat > /usr/local/etc/xray/outbounds.json <<- EOF
-{
-  "outbounds": [
-    {
-      "tag": "direct",
-      "protocol": "freedom"
-    },
-    {
-      "tag": "blocked",
-      "protocol": "blackhole"
-    }
-  ]
-}
+  cat > /usr/local/etc/xray/outbounds.yaml <<- EOF
+outbounds:
+- tag: direct
+  protocol: freedom
+- tag: blocked
+  protocol: blackhole
 EOF
-  cat > /usr/local/etc/xray/routing.json <<- EOF
-{
-  "routing": {
-    "domainStrategy": "AsIs",
-    "rules": [
-      {
-        "type": "field",
-        "ip": [
-          "geoip:private"
-        ],
-        "outboundTag": "blocked"
-      }
-    ]
-  }
-}
+  cat > /usr/local/etc/xray/routing.yaml <<- EOF
+routing:
+  domainStrategy: AsIs
+  rules:
+  - type: field
+    ip:
+    - geoip:private
+    outboundTag: blocked
 EOF
 }
 
@@ -266,10 +218,10 @@ uninstall_xray() {
 }
 
 info_xray() {
-  h2uuid=$(awk -F'"' '/"id"/ {print$4}' $h2conf)
-  wsuuid=$(awk -F'"' '/"id"/ {print$4}' $wsconf)
-  grpcuuid=$(awk -F'"' '/"id"/ {print$4}' $grpcconf)
-  h2path=$(awk -F'"' '/"path"/ {print$4}' $h2conf | tr -d /)
+  h2uuid=$(awk -F'"' '/id:/ {print$2}' $h2conf)
+  wsuuid=$(awk -F'"' '/id:/ {print$2}' $wsconf)
+  grpcuuid=$(awk -F'"' '/id:/ {print$2}' $grpcconf)
+  h2path=$(awk -F'"' '/path:/ {print$2}' $h2conf | tr -d /)
   domain=$(awk 'NR==1 {print$1}' /etc/caddy/Caddyfile)
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
@@ -277,7 +229,7 @@ info_xray() {
     cat << EOF
 {
   "v": "2",
-  "ps": "",
+  "ps": "ws",
   "add": "${domain}",
   "port": "443",
   "id": "${wsuuid}",
@@ -303,7 +255,7 @@ EOF
   echo -e " ${y}(ios专用~360ms)${p} 分享码3："
   echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
-  echo -e "(win)v2rayN下载链接：${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
+  echo -e "(windows)v2rayN下载链接：${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
   echo -e "(android)v2rayNG下载链接：${g}https://github.com/2dust/v2rayNG/releases/download/1.6.3/v2rayNG_1.6.3_arm64-v8a.apk${p}"
 }
 
