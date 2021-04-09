@@ -15,7 +15,14 @@ link2=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/g
 pre_install() {
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
-  apt install wget unzip -y > /dev/null 2>&1
+  if command -v "unzip" > /dev/null 2>&1; then
+    echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
+    apt install unzip -y > /dev/null 2>&1
+  fi
+  if command -v "wget" > /dev/null 2>&1; then
+    echo -e "[${g}Info${p}] 正在安装${y}wget${p}..."
+    apt install wget -y > /dev/null 2>&1
+  fi
   mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/ /var/www/
   wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
 }
