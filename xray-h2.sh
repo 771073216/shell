@@ -108,6 +108,7 @@ ${domain} {
     file_server
 }
 EOF
+  systemctl restart caddy
 }
 
 set_service() {
