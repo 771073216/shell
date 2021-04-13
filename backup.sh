@@ -14,6 +14,7 @@ b() {
 r() {
   https://github.com/AdguardTeam/AdGuardHome/releases/latest/download/AdGuardHome_linux_amd64.tar.gz
   tar xvf AdGuardHome_linux_amd64.tar.gz
+  ./AdGuardHome/AdGuardHome -s install
   rm AdGuardHome_linux_amd64.tar.gz
   apt install smartdns -y
   unzip backup.zip
@@ -24,8 +25,11 @@ r() {
   cp -r backup/smartdns/ /etc/
   cp -r backup/caddy/ /etc/
   cp -r backup/xray/ /usr/local/etc/
+  mkdir /var/log/xray
+  chown -R nobody:nogroup /var/log/xray
   rm -r backup/
   rm backup.zip
+  systemctl restart smartdns AdGuardHome xray caddy sshd
 }
 
 action=$1
