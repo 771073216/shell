@@ -19,10 +19,6 @@ pre_install() {
     echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
     apt install unzip -y > /dev/null 2>&1
   fi
-  if ! command -v "wget" > /dev/null 2>&1; then
-    echo -e "[${g}Info${p}] 正在安装${y}wget${p}..."
-    apt install wget -y > /dev/null 2>&1
-  fi
   mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/ /var/www/
   wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
 }
@@ -255,10 +251,10 @@ EOF
   [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
   echo -e " ${y}(延迟更低~180ms)${p} 分享码1："
-  echo -e " ${r}vless://${h2uuid}@${domain}:443?security=tls&type=http&host=${domain}&path=${h2path}#h2${p}"
+  echo -e " ${r}vless://${h2uuid}@${domain}:443?encryption=none&security=tls&type=http&host=${domain}&path=${h2path}#h2${p}"
   echo
   echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
-  echo -e " ${r}vless://${grpcuuid}@${domain}:443?security=tls&type=grpc&path=grpc#grpc${p}"
+  echo -e " ${r}vless://${grpcuuid}@${domain}:443?encryption=none&security=tls&type=grpc&path=grpc#grpc${p}"
   echo
   echo -e " ${y}(ios专用~360ms)${p} 分享码3："
   echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
