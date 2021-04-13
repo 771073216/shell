@@ -23,7 +23,7 @@ r() {
 }
 
 action=$1
-[ -z "$1" ] && action=b
+[ -z "$1" ] && exit 1
 case "$action" in
   b | r)
     $action
