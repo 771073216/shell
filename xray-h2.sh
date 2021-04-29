@@ -9,6 +9,7 @@ grpcconf=/usr/local/etc/xray/grpc.yaml
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 link1=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
 link2=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
 pre_install() {
