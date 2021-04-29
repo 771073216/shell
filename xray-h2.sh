@@ -5,7 +5,6 @@ y='\033[0;33m'
 p='\033[0m'
 TMP_DIR="$(mktemp -du)"
 h2conf=/usr/local/etc/xray/h2.yaml
-wsconf=/usr/local/etc/xray/ws.yaml
 grpcconf=/usr/local/etc/xray/grpc.yaml
 link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
 link1=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
@@ -43,26 +42,10 @@ inbounds:
       host:
       - "${domain}"
 EOF
-  wsuuid=$(cat /proc/sys/kernel/random/uuid)
-  cat > $wsconf <<- EOF
-inbounds:
-- port: 2002
-  listen: 127.0.0.1
-  protocol: vmess
-  tag: ws
-  settings:
-    clients:
-    - id: "${wsuuid}"
-  streamSettings:
-    network: ws
-    security: none
-    wsSettings:
-      path: "/vmws"
-EOF
   grpcuuid=$(cat /proc/sys/kernel/random/uuid)
   cat > $grpcconf <<- EOF
 inbounds:
-- port: 2003
+- port: 2002
   listen: 127.0.0.1
   protocol: vless
   tag: grpc
@@ -98,8 +81,7 @@ set_caddy() {
 ${domain} {
     @grpc protocol grpc
     reverse_proxy /vlh2 h2c://127.0.0.1:2001
-    reverse_proxy /vmws http://127.0.0.1:2002
-    reverse_proxy @grpc h2c://127.0.0.1:2003
+    reverse_proxy @grpc h2c://127.0.0.1:2002
     root * /var/www
     file_server
 }
@@ -223,29 +205,11 @@ uninstall_xray() {
 
 info_xray() {
   h2uuid=$(awk -F'"' '/id:/ {print$2}' $h2conf)
-  wsuuid=$(awk -F'"' '/id:/ {print$2}' $wsconf)
   grpcuuid=$(awk -F'"' '/id:/ {print$2}' $grpcconf)
   h2path=$(awk -F'"' '/path:/ {print$2}' $h2conf | tr -d /)
   domain=$(awk 'NR==1 {print$1}' /etc/caddy/Caddyfile)
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
-  vmlink=$(
-    cat << EOF
-{
-  "v": "2",
-  "ps": "ws",
-  "add": "${domain}",
-  "port": "443",
-  "id": "${wsuuid}",
-  "aid": "0",
-  "net": "ws",
-  "type": "none",
-  "host": "",
-  "path": "vmws",
-  "tls": "tls"
-}
-EOF
-  )
   echo
   [ "$xraystatus" -eq 0 ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
   [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
@@ -255,9 +219,6 @@ EOF
   echo
   echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
   echo -e " ${r}vless://${grpcuuid}@${domain}:443?encryption=none&security=tls&type=grpc&path=grpc#grpc${p}"
-  echo
-  echo -e " ${y}(ios专用~360ms)${p} 分享码3："
-  echo -e " ${r}vmess://$(echo "$vmlink" | base64 | tr -d '\n')${p}"
   echo
   echo -e "(windows)v2rayN下载链接：${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
   echo -e "(android)v2rayNG下载链接：${g}https://github.com/2dust/v2rayNG/releases/download/1.6.3/v2rayNG_1.6.3_arm64-v8a.apk${p}"
