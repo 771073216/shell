@@ -219,7 +219,7 @@ info_xray() {
   echo -e " ${r}vless://${h2uuid}@${domain}:443?type=http&encryption=none&security=tls&path=${h2path}&host=${domain}#h2${p}"
   echo
   echo -e " ${y}(延迟最低~90ms)[需要最新版v2rayN和v2rayNG]${p} 分享码2："
-  echo -e " ${r}vless://${grpcuuid}@${domain}:443?type=grpc&encryption=none&security=tls&path=grpc#grpc${p}"
+  echo -e " ${r}vless://${grpcuuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
   echo
   echo -e "(windows)v2rayN下载链接：${g}https://github.com/2dust/v2rayN/releases/download/4.13/v2rayN.zip${p}"
   echo -e "(android)v2rayNG下载链接：${g}https://github.com/2dust/v2rayNG/releases/download/1.6.3/v2rayNG_1.6.3_arm64-v8a.apk${p}"
