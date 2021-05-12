@@ -4,7 +4,7 @@ num2=0
 list1=$(find /data/data/ -name app_tbs)
 list2=$(find /data/data/ -name app_tbs_64)
 for file in $list1; do
-  if find "${file}/*"; then
+  if find "${file}"/* 2> /dev/null; then
     rm -r "${file:?}"/*
     chattr -i "$file"
     chmod 000 "$file"
@@ -13,7 +13,7 @@ for file in $list1; do
   fi
 done
 for file in $list2; do
-  if find "${file}/*"; then
+  if find "${file}"/* 2> /dev/null; then
     rm -r "${file:?}"/*
     chattr -i "$file"
     chmod 000 "$file"
