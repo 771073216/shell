@@ -125,11 +125,11 @@ update_caddy() {
     echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
   fi
   if [ "${local_num}" -gt "${remote_num}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_remote}${p}。"
   else
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_local}${p}。"
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_remote}${p}。"
   fi
-  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_local}${p}。"
+  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_remote}${p}。"
   exit 0
 }
 
