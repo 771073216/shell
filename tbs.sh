@@ -1,6 +1,6 @@
 #!/bin/bash
 num=0
-list=$(find /data/data/ -name app_tbs*)
+list=$(find /data/data/ -name "app_tbs*")
 for file in $list; do
   if find "${file}"/* > /dev/null 2>&1; then
     rm -r "${file:?}"/*

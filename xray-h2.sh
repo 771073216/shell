@@ -4,7 +4,6 @@ g='\033[0;32m'
 y='\033[0;33m'
 p='\033[0m'
 TMP_DIR="$(mktemp -du)"
-grpcconf=/usr/local/etc/xray/grpc.yaml
 
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
@@ -15,67 +14,8 @@ pre_install() {
     echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
     apt install unzip -y > /dev/null 2>&1
   fi
-  mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/ /etc/caddy/ /var/www/
+  mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
   wget -q --show-progress "https://cdn.jsdelivr.net/gh/771073216/azzb@master/github" -O '/var/www/index.html'
-}
-
-set_xray() {
-  grpcuuid=$(cat /proc/sys/kernel/random/uuid)
-  cat > $grpcconf <<- EOF
-inbounds:
-- port: 2001
-  listen: 127.0.0.1
-  protocol: vless
-  tag: grpc
-  settings:
-    clients:
-    - id: "${grpcuuid}"
-    decryption: none
-  streamSettings:
-    network: grpc
-    grpcSettings:
-      serviceName: grpc
-EOF
-  cat > /usr/local/etc/xray/outbounds.yaml <<- EOF
-outbounds:
-- tag: direct
-  protocol: freedom
-EOF
-}
-
-set_caddy() {
-  cat > /etc/caddy/Caddyfile <<- EOF
-${domain} {
-    @grpc protocol grpc
-    reverse_proxy @grpc h2c://127.0.0.1:2001
-    root * /var/www
-    file_server
-}
-EOF
-  systemctl restart caddy
-}
-
-set_service() {
-  cat > /etc/systemd/system/xray.service <<- EOF
-[Unit]
-Description=Xray Service
-Documentation=https://github.com/xtls
-After=network.target nss-lookup.target
-
-[Service]
-User=nobody
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray run -confdir /usr/local/etc/xray/
-Restart=on-failure
-RestartPreventExitStatus=23
-LimitNPROC=10000
-LimitNOFILE=1000000
-
-[Install]
-WantedBy=multi-user.target
-EOF
 }
 
 set_bbr() {
@@ -86,19 +26,19 @@ set_bbr() {
   sysctl -p > /dev/null 2>&1
 }
 
-install_caddy() {
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
-  dpkg -i caddy.deb
-  rm -rf "$TMP_DIR"
-}
-
 install_file() {
+  uuid=$(cat /proc/sys/kernel/random/uuid)
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
-  unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-inst.zip
+  unzip -q "xray-linux.zip"
+  mv xray /usr/local/bin/
+  mv xray.service /etc/systemd/system/
+  dpkg -i caddy.deb
+  sed -i "s/uuid/$uuid/g" config.yaml
+  sed -i "s/domain/$domain/g" Caddyfile
+  mv config.yaml /usr/local/etc/xray/
+  mv Caddyfile /etc/caddy/
   rm -rf "$TMP_DIR"
 }
 
@@ -109,7 +49,11 @@ update_xray() {
   local_num=$(echo "$xray_local" | tr -d .)
   if [ "${local_num}" -lt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
-    install_file
+    mkdir "$TMP_DIR"
+    cd "$TMP_DIR" || exit 1
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
+    unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
+    rm -rf "$TMP_DIR"
     systemctl restart xray
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
@@ -121,7 +65,11 @@ update_caddy() {
   caddy_local=$(/usr/bin/caddy version | awk '{print$1}' | tr -d v)
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
-    install_caddy
+    mkdir "$TMP_DIR"
+    cd "$TMP_DIR" || exit 1
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
+    dpkg -i caddy.deb
+    rm -rf "$TMP_DIR"
     echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
   fi
   if [ "${local_num}" -gt "${remote_num}" ]; then
@@ -136,12 +84,9 @@ update_caddy() {
 install_xray() {
   [ -f /usr/local/bin/xray ] && update_xray
   pre_install
-  install_caddy
-  set_caddy
-  set_service
-  set_xray
   install_file
   systemctl enable xray --now
+  systemctl restart caddy
   set_bbr
   info_xray
 }
@@ -156,7 +101,7 @@ uninstall_xray() {
 }
 
 info_xray() {
-  grpcuuid=$(awk -F'"' '/id:/ {print$2}' $grpcconf)
+  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml)
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
   echo
@@ -164,7 +109,7 @@ info_xray() {
   [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
   echo -e " ${y}[需要最新版v2rayN和v2rayNG]${p} 分享码："
-  echo -e " ${r}vless://${grpcuuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
+  echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
   echo
   echo -e "(windows)v2rayN下载链接：${g}https://cdn.jsdelivr.net/gh/771073216/dist@main/v2rayn-core.zip${p}"
   echo -e "(android)v2rayNG下载链接：${g}https://cdn.jsdelivr.net/gh/771073216/dist@main/v2rayng.apk${p}"
