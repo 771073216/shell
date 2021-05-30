@@ -20,7 +20,7 @@ install_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-inst.zip
-  unzip -q "xray-linux.zip"
+  unzip -q "xray-inst.zip"
   sed -i "s/uuid/$uuid/g" config.yaml
   sed -i "s/domain/$domain/g" Caddyfile
   dpkg -i caddy.deb
