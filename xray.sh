@@ -7,23 +7,6 @@ TMP_DIR="$(mktemp -du)"
 uuid=$(cat /proc/sys/kernel/random/uuid)
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
-link=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-
-check_xray() {
-  if command -v "xray" > /dev/null 2>&1; then
-    update_xray
-  fi
-}
-
-get_domain() {
-  echo -e -n "[${g}Info${p}] 输入域名： "
-  read -r domain
-}
-
-pre_install() {
-  wget -c "https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip"
-  unzip -oq "html.zip" -d '/var/www'
-}
 
 set_xray() {
   install -d /usr/local/etc/xray/
@@ -38,49 +21,28 @@ set_xray() {
 }
 
 set_conf() {
-  cat > /usr/local/etc/xray/config.json <<- EOF
-{
-  "inbounds": [
-    {
-      "port": 443,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "${uuid}",
-            "flow": "xtls-rprx-direct"
-          }
-        ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "dest": 80
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "xtls",
-        "xtlsSettings": {
-          "alpn": [
-            "http/1.1"
-          ],
-          "certificates": [
-            {
-              "certificateFile": "/etc/ssl/xray/cert.pem",
-              "keyFile": "/etc/ssl/xray/key.pem"
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "freedom"
-    }
-  ]
-}
+  cat > /usr/local/etc/xray/config.yaml <<- EOF
+inbounds:
+- port: 443
+  protocol: vless
+  settings:
+    clients:
+    - id: "${uuid}"
+      flow: xtls-rprx-direct
+    decryption: none
+    fallbacks:
+    - dest: 80
+  streamSettings:
+    network: tcp
+    security: xtls
+    xtlsSettings:
+      alpn:
+      - http/1.1
+      certificates:
+      - certificateFile: "/usr/local/etc/xray/xray.crt"
+        keyFile: "/usr/local/etc/xray/xray.key"
+outbounds:
+- protocol: freedom
 EOF
 }
 
@@ -102,10 +64,8 @@ set_bbr() {
 }
 
 set_ssl() {
-  mkdir /etc/ssl/xray/
   wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
-  /root/.acme.sh/acme.sh --issue -d "$domain" --keylength ec-256 --fullchain-file /etc/ssl/xray/cert.pem --key-file /etc/ssl/xray/key.pem --webroot /var/www --force
-  chown -R nobody:nogroup /etc/ssl/xray/
+  /root/.acme.sh/acme.sh --issue -d "$domain" --standalone --keylength ec-256 --pre-hook "systemctl stop caddy xray" --post-hook "/root/.acme.sh/acme.sh --installcert -d $domain --ecc --fullchain-file /usr/local/etc/xray/xray.crt --key-file /usr/local/etc/xray/xray.key --reloadcmd \"systemctl restart caddy xray\""
 }
 
 set_service() {
@@ -120,63 +80,66 @@ User=nobody
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.yaml
 
 [Install]
 WantedBy=multi-user.target
 EOF
 }
 
-install_caddy() {
-  if ! command -v "caddy" > /dev/null 2>&1; then
-    echo "deb [trusted=yes] https://apt.fury.io/caddy/ /" > /etc/apt/sources.list.d/caddy-fury.list
-    apt update
-    apt install caddy
-  fi
+install_xray() {
+  [ -f /usr/local/bin/xray ] && update_xray
+  echo -e -n "[${g}Info${p}] 输入域名： "
+  read -r domain
+  mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
+  set_ssl
+  mkdir "$TMP_DIR"
+  cd "$TMP_DIR" || exit 1
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
+  dpkg -i caddy.deb
   set_caddy
   systemctl restart caddy
-}
-
-install_file() {
-  wget -q --show-progress https://api.azzb.workers.dev/"$link"
-  unzip -oq "Xray-linux-64.zip" "xray" -d ./
-  mv "xray" /usr/local/bin/
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/azzb@master/html.zip
+  unzip -oq "html.zip" -d /var/www/
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
+  unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
+  rm -rf "$TMP_DIR"
+  set_xray
+  systemctl enable xray --now
+  info_xray
 }
 
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  ver=$(wget -qO- "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
-  ver1=v$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
-  verc=$(echo "$ver" | tr -d .v)
-  ver1c=$(echo "$ver1" | tr -d .v)
-  if [ "${ver1c}" -gt "${verc}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${ver1}${p}。"
-  elif [ "${ver1c}" -eq "${verc}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${ver1}${p}。"
-  else
-    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}${ver1}${p} --> ${g}${ver}${p}"
-    install_file
+  wget -q "https://cdn.jsdelivr.net/gh/771073216/dist@main/version"
+  xray_remote=$(awk '/xray/ {print$2}' version)
+  caddy_remote=$(awk '/caddy/ {print$2}' version)
+  xray_local=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
+  caddy_local=$(/usr/bin/caddy version | awk '{print$1}' | tr -d v)
+  remote_num=$(echo "$xray_remote" | tr -d .)
+  local_num=$(echo "$xray_local" | tr -d .)
+  if [ "${local_num}" -lt "${remote_num}" ]; then
+    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
+    unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
     systemctl restart xray
     echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
   fi
+  if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
+    echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
+    dpkg -i caddy.deb
+    echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
+  fi
+  if [ "${local_num}" -gt "${remote_num}" ]; then
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
+  else
+    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_remote}${p}。"
+  fi
+  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_remote}${p}。"
   rm -rf "$TMP_DIR"
   exit 0
-}
-
-install_xray() {
-  check_xray
-  get_domain
-  set_ssl
-  install_caddy
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  pre_install
-  install_file
-  rm -rf "$TMP_DIR"
-  set_xray
-  systemctl enable xray --now
-  info_xray
 }
 
 uninstall_xray() {
@@ -190,28 +153,23 @@ uninstall_xray() {
 
 info_xray() {
   status=$(pgrep -a xray | grep -c xray)
-  [ ! -f /usr/local/etc/xray/config.json ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
+  [ ! -f /usr/local/etc/xray/config.yaml ] && echo -e "[${r}Error${p}] 未找到xray配置文件！" && exit 1
   [ "$status" -eq 0 ] && xraystatus="${r}已停止${p}" || xraystatus="${g}正在运行${p}"
   echo -e " id： ${g}$(grep < '/usr/local/etc/xray/config.json' id | cut -d'"' -f4)${p}"
   echo -e " xray运行状态：${xraystatus}"
 }
 
 manual() {
+  ver=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/tags | awk -F '"' '/name/ {print $4}' | head -n 1)
+  xray_local=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  ver=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/tags | awk -F '"' '/name/ {print $4}' | head -n 1)
-  echo "$ver"
-  echo "correct?  q = quit "
-  read -r co
-  if ! [ "$co" = q ]; then
-    link=https://github.com/XTLS/Xray-core/releases/download/$ver/Xray-linux-64.zip
-    install_file
-    systemctl restart xray
-  else
-    echo "cancel"
-  fi
+  echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}${ver}${p}"
+  wget -q --show-progress https://github.com/XTLS/Xray-core/releases/download/"$ver"/Xray-linux-64.zip
+  unzip -oq "Xray-linux-64.zip" xray -d /usr/local/bin/
   rm -rf "$TMP_DIR"
-  exit 0
+  systemctl restart xray
+  echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
 }
 
 action=$1
