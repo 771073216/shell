@@ -16,22 +16,14 @@ install_xray() {
     echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
     apt install unzip -y > /dev/null 2>&1
   fi
-  mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-inst.zip
-  unzip -q "xray-inst.zip"
-  sed -i "s/uuid/$uuid/g" config.yaml
-  sed -i "s/domain/$domain/g" Caddyfile
-  dpkg -i caddy.deb
-  mv xray /usr/local/bin/
-  mv xray.service /etc/systemd/system/
-  mv config.yaml /usr/local/etc/xray/
-  mv Caddyfile /etc/caddy/
-  mv index.html /var/www/
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb
+  dpkg -i xray.deb
+  sed -i "s/uuid/$uuid/g" /usr/local/etc/xray/config.yaml
+  sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
   rm -rf "$TMP_DIR"
-  systemctl enable xray --now
-  systemctl restart caddy
+  systemctl restart xray caddy
   echo -e "[${g}Info${p}] 设置bbr..."
   sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
@@ -52,16 +44,16 @@ update_xray() {
   local_num=$(echo "$xray_local" | tr -d .)
   if [ "${local_num}" -lt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
-    unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
-    systemctl restart xray
-    echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
+    update="1"
   fi
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
     echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
-    dpkg -i caddy.deb
-    echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
+    update="1"
+  fi
+  if [ "${update}" -eq 1 ]; then
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb
+    dpkg -i xray.deb
+    echo -e "[${g}Info${p}] ${y}caddy and xray${p}更新成功！"
   fi
   if [ "${local_num}" -gt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
@@ -75,10 +67,7 @@ update_xray() {
 
 uninstall_xray() {
   echo -e "[${g}Info${p}] 正在卸载${y}xray${p}..."
-  systemctl disable xray --now
-  rm -f /usr/local/bin/xray
-  rm -rf /usr/local/etc/xray/
-  rm -f /etc/systemd/system/xray.service
+  dpkg --purge xray
   echo -e "[${g}Info${p}] 卸载成功！"
 }
 
