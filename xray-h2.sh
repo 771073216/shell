@@ -38,20 +38,17 @@ update_xray() {
   caddy_local=$(/usr/bin/caddy version | awk '{print$1}' | tr -d v)
   remote_num=$(echo "$xray_remote" | tr -d .)
   local_num=$(echo "$xray_local" | tr -d .)
+  echo "========================="
   if [ "${local_num}" -lt "${remote_num}" ]; then
-    echo "========================="
     echo -e "| ${y}xray${p}  | ${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
     update="1"
   else
-    echo "========================="
     echo -e "| ${y}xray${p}  | ${g}v${xray_local}${p}"
   fi
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
-    echo "========================="
     echo -e "| ${y}caddy${p} | ${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
     update="1"
   else
-    echo "========================="
     echo -e "| ${y}caddy${p} | ${g}v${caddy_local}${p}"
   fi
   echo "========================="
