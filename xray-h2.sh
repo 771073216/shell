@@ -12,10 +12,6 @@ install_xray() {
   [ -f /usr/local/bin/xray ] && update_xray
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
-  if ! command -v "unzip" > /dev/null 2>&1; then
-    echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
-    apt install unzip -y > /dev/null 2>&1
-  fi
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb
@@ -53,7 +49,7 @@ update_xray() {
   if [ "${update}" -eq 1 ]; then
     wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb
     dpkg -i xray.deb
-    echo -e "[${g}Info${p}] ${y}caddy and xray${p}更新成功！"
+    echo -e "[${g}Info${p}] 更新成功！"
   fi
   if [ "${local_num}" -gt "${remote_num}" ]; then
     echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
