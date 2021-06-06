@@ -39,24 +39,27 @@ update_xray() {
   remote_num=$(echo "$xray_remote" | tr -d .)
   local_num=$(echo "$xray_local" | tr -d .)
   if [ "${local_num}" -lt "${remote_num}" ]; then
-    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
+    echo "========================="
+    echo -e "| ${y}xray${p}  | ${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
     update="1"
+  else
+    echo "========================="
+    echo -e "| ${y}xray${p}  | ${g}v${xray_local}${p}"
   fi
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
-    echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
+    echo "========================="
+    echo -e "| ${y}caddy${p} | ${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
     update="1"
+  else
+    echo "========================="
+    echo -e "| ${y}caddy${p} | ${g}v${caddy_local}${p}"
   fi
+  echo "========================="
   if [ "${update}" -eq 1 ]; then
     wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb
     dpkg -i xray.deb
     echo -e "[${g}Info${p}] 更新成功！"
   fi
-  if [ "${local_num}" -gt "${remote_num}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
-  else
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_remote}${p}。"
-  fi
-  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_remote}${p}。"
   rm -rf "$TMP_DIR"
   exit 0
 }
