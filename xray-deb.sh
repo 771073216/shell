@@ -23,7 +23,7 @@ install_xray() {
 }
 
 update_xray() {
-  remote_version=$(wget -qO- "https://cdn.jsdelivr.net/gh/771073216/dist@main/version" | awk '/xray+caddy/ {print$2}')
+  remote_version=$(wget -qO- "https://cdn.jsdelivr.net/gh/771073216/deb@main/deb/DEBIAN/control" | awk '/Version/ {print$2}')
   local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
