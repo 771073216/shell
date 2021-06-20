@@ -14,7 +14,7 @@ install_xray() {
   fi
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb -O /tmp/xray/xray.deb
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O /tmp/xray/xray.deb
   dpkg -i /tmp/xray/xray.deb && rm -rf /tmp/xray
   sed -i "s/uuid/$uuid/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
@@ -27,7 +27,7 @@ update_xray() {
   local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray.deb -O /tmp/xray/xray.deb
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O /tmp/xray/xray.deb
     dpkg -i /tmp/xray/xray.deb && rm -rf /tmp/xray
     echo -e "[${g}Info${p}] 更新成功！"
   else

@@ -19,10 +19,13 @@ install_xray() {
   mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-inst.zip
-  unzip -q "xray-inst.zip"
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
+  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/config/caddy/Caddyfile
+  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/config/xray/config.yaml
+  unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
   sed -i "s/uuid/$uuid/g" config.yaml
   sed -i "s/domain/$domain/g" Caddyfile
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
   dpkg -i caddy.deb
   mv xray /usr/local/bin/
   mv xray.service /etc/systemd/system/
