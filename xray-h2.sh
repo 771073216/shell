@@ -7,42 +7,6 @@ TMP_DIR="$(mktemp -du)"
 
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
-install_xray() {
-  uuid=$(cat /proc/sys/kernel/random/uuid)
-  [ -f /usr/local/bin/xray ] && update_xray
-  echo -e -n "[${g}Info${p}] 输入域名： "
-  read -r domain
-  if ! command -v "unzip" > /dev/null 2>&1; then
-    echo -e "[${g}Info${p}] 正在安装${y}unzip${p}..."
-    apt install unzip -y > /dev/null 2>&1
-  fi
-  mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
-  mkdir "$TMP_DIR"
-  cd "$TMP_DIR" || exit 1
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
-  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/config/caddy/Caddyfile
-  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/config/xray/config.yaml
-  unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
-  sed -i "s/uuid/$uuid/g" config.yaml
-  sed -i "s/domain/$domain/g" Caddyfile
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
-  dpkg -i caddy.deb
-  mv xray /usr/local/bin/
-  mv xray.service /etc/systemd/system/
-  mv config.yaml /usr/local/etc/xray/
-  mv Caddyfile /etc/caddy/
-  mv index.html /var/www/
-  rm -rf "$TMP_DIR"
-  systemctl enable xray --now
-  systemctl restart caddy
-  echo -e "[${g}Info${p}] 设置bbr..."
-  sed -i '/net.core.default_qdisc/d' '/etc/sysctl.conf'
-  sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
-  (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
-  sysctl -p > /dev/null 2>&1
-  info_xray
-}
-
 update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
@@ -114,7 +78,7 @@ manual() {
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install | info | uninstall)
+  update | info | uninstall)
     ${action}_xray
     ;;
   -m)
