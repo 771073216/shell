@@ -11,7 +11,7 @@ update_xray() {
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q "https://cdn.jsdelivr.net/gh/771073216/dist@main/version"
-  xray_remote=$(awk '/xray/ {print$2}' version)
+  xray_remote=$(awk '/^xray/ {print$2}' version)
   caddy_remote=$(awk '/caddy/ {print$2}' version)
   xray_local=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
   caddy_local=$(/usr/bin/caddy version | awk '{print$1}' | tr -d v)
