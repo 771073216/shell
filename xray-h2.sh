@@ -18,24 +18,22 @@ update_xray() {
   remote_num=$(echo "$xray_remote" | tr -d .)
   local_num=$(echo "$xray_local" | tr -d .)
   if [ "${local_num}" -lt "${remote_num}" ]; then
-    echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
+    echo -e "| ${y}xray${p} | ${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
     wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
     unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
     systemctl restart xray
-    echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
+    echo -e "| ${y}xray${p} | ${g}更新成功！${p}"
+  else
+    echo -e "| ${y}xray${p} | ${g}v${xray_local}${p}"
   fi
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
-    echo -e "[${g}Info${p}] 正在更新${y}caddy${p}：${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
+    echo -e "| ${y}caddy${p} | ${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
     wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
     dpkg -i caddy.deb
-    echo -e "[${g}Info${p}] ${y}caddy${p}更新成功！"
-  fi
-  if [ "${local_num}" -gt "${remote_num}" ]; then
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装pre版本${g}${xray_local}${p}。"
+    echo -e "| ${y}caddy${p} | ${g}更新成功！${p}"
   else
-    echo -e "[${g}Info${p}] ${y}xray${p}已安装最新版本${g}${xray_remote}${p}。"
+    echo -e "| ${y}caddy${p} | ${g}v${caddy_local}${p}"
   fi
-  echo -e "[${g}Info${p}] ${y}caddy${p}已安装最新版本${g}${caddy_remote}${p}。"
   rm -rf "$TMP_DIR"
   exit 0
 }
@@ -55,8 +53,8 @@ info_xray() {
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
   echo
-  [ "$xraystatus" -eq 0 ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
-  [ "$caddystatus" -eq 0 ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
+  [ "$xraystatus" -eq 0 ] && echo -e "| ${y}xray${p} | ${r}已停止${p}" || echo -e "| ${y}xray${p} | ${g}正在运行${p}"
+  [ "$caddystatus" -eq 0 ] && echo -e "| ${y}caddy${p} | ${r}已停止${p}" || echo -e "| ${y}caddy${p} | ${g}正在运行${p}"
   echo
   echo -e " 分享码："
   echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
@@ -67,12 +65,12 @@ manual() {
   xray_local=$(/usr/local/bin/xray -version | awk 'NR==1 {print $2}')
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
-  echo -e "[${g}Info${p}] 正在更新${y}xray${p}：${r}v${xray_local}${p} --> ${g}${ver}${p}"
+  echo -e "| ${y}xray${p} | ${r}v${xray_local}${p} --> ${g}${ver}${p}"
   wget -q --show-progress https://github.com/XTLS/Xray-core/releases/download/"$ver"/Xray-linux-64.zip
   unzip -oq "Xray-linux-64.zip" xray -d /usr/local/bin/
   rm -rf "$TMP_DIR"
   systemctl restart xray
-  echo -e "[${g}Info${p}] ${y}xray${p}更新成功！"
+  echo -e "| ${y}xray${p} | ${y}xray${p}更新成功！"
 }
 
 action=$1
