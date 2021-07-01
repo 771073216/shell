@@ -74,7 +74,7 @@ manual() {
 }
 
 action=$1
-[ -z "$1" ] && action=install
+[ -z "$1" ] && action=update
 case "$action" in
   update | info | uninstall)
     ${action}_xray
@@ -84,6 +84,6 @@ case "$action" in
     ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|uninstall|info|-m]"
+    echo "使用方法：$(basename "$0") [update|uninstall|info|-m]"
     ;;
 esac
