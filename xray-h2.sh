@@ -19,7 +19,7 @@ update_xray() {
   local_num=$(echo "$xray_local" | tr -d .)
   if [ "${local_num}" -lt "${remote_num}" ]; then
     echo -e "| ${y}xray${p} | ${r}v${xray_local}${p} --> ${g}v${xray_remote}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/xray-linux.zip
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/xray-linux.zip
     unzip -oq "xray-linux.zip" xray -d /usr/local/bin/
     systemctl restart xray
     echo -e "| ${y}xray${p} | ${g}更新成功！${p}"
@@ -28,7 +28,7 @@ update_xray() {
   fi
   if ! [ "${caddy_local}" == "${caddy_remote}" ]; then
     echo -e "| ${y}caddy${p} | ${r}v${caddy_local}${p} --> ${g}v${caddy_remote}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
+    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/caddy.deb
     dpkg -i caddy.deb
     echo -e "| ${y}caddy${p} | ${g}更新成功！${p}"
   else
