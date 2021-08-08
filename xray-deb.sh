@@ -9,7 +9,7 @@ rm -rf /tmp/xray && mkdir /tmp/xray
 
 install_xray() {
   uuid=$(cat /proc/sys/kernel/random/uuid)
-  if ! dpkg -l | grep xray; then
+  if dpkg -l | grep xray; then
     update_xray
   fi
   echo -e -n "[${g}Info${p}] 输入域名： "
