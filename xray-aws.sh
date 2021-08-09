@@ -37,7 +37,7 @@ info_xray() {
   echo
   echo -e " 分享码："
   echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
-  echo -e " uuid: $(xray uuid -i $uuid)"
+  echo -e " uuid: $(xray uuid -i "$uuid")"
 }
 
 action=$1
