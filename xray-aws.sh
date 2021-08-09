@@ -13,8 +13,8 @@ install_xray() {
   read -r passwd
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
   dpkg -i xray.deb
-  sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/inbounds.yaml
-  sed -i "s/owndomain/$domain/g" /usr/local/etc/xray/inbounds.yaml
+  sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
+  sed -i "s/owndomain/$domain/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
   systemctl restart xray caddy
   info_xray
@@ -27,7 +27,7 @@ uninstall_xray() {
 }
 
 info_xray() {
-  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/inbounds.yaml | head -n1)
+  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml | head -n1)
   domain=$(awk 'NR==1 {print$1}' /usr/local/etc/caddy/Caddyfile)
   xraystatus=$(pgrep xray)
   caddystatus=$(pgrep caddy)
@@ -37,7 +37,9 @@ info_xray() {
   echo
   echo -e " 分享码："
   echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
-  echo -e " uuid: $(xray uuid -i "$uuid")"
+  echo
+  echo -e " uuid:"
+  echo -e " $(xray uuid -i "$uuid")"
 }
 
 action=$1
