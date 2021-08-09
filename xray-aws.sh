@@ -30,7 +30,7 @@ uninstall_xray() {
 }
 
 info_xray() {
-  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml)
+  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml | head -n1)
   domain=$(awk 'NR==1 {print$1}' /usr/local/etc/caddy/Caddyfile)
   xraystatus=$(pgrep -a xray | grep -c xray)
   caddystatus=$(pgrep -a caddy | grep -c caddy)
