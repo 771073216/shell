@@ -39,7 +39,7 @@ info_xray() {
   echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
   echo
   echo -e " uuid:"
-  echo -e " $(xray uuid -i "$uuid")"
+  echo -e " ${y}$(xray uuid -i "$uuid")${p}"
 }
 
 action=$1
