@@ -12,7 +12,7 @@ install_xray() {
   echo -e -n "[${g}Info${p}] 输入密码： "
   read -r passwd
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
-  dpkg -i xray.deb
+  dpkg -i xray.deb && rm xray.deb
   sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
   sed -i "s/owndomain/$domain/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
