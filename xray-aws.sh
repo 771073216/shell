@@ -12,7 +12,7 @@ install_xray() {
   read -r domain
   echo -e -n "[${g}Info${p}] 输入密码： "
   read -r passwd
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O /tmp/xray/xray.deb
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray-aws.deb -O /tmp/xray/xray.deb
   dpkg -i /tmp/xray/xray.deb && rm -rf /tmp/xray
   mkdir -p /usr/local/share/xray/
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/geofile@release/geoip.dat -O /usr/local/share/xray/geoip.dat
