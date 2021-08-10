@@ -60,11 +60,10 @@ install_hysteria() {
 
 update_hysteria() {
   latest_version=$(wget -qO- https://cdn.jsdelivr.net/gh/771073216/dist@main/version | awk '/hysteria/ {print$2}')
-  local_version=$(/usr/local/bin/hysteria -v | awk '{print$3}')
-  [ "$latest_version" == "$local_version" ] && exit 0
+  local_version=$(/usr/local/bin/hysteria -v | awk '{print$3}' | tr -d v)
+  [ "$latest_version" == "$local_version" ] && echo "no update" && exit 0
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/hysteria -O /usr/local/bin/hysteria
   systemctl restart hysteria
-  exit 0
 }
 
 uninstall_hysteria() {
