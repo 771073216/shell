@@ -52,18 +52,17 @@ install_hysteria() {
   mkdir -p /usr/local/etc/hysteria/
   set_service
   set_conf
-  wget -q --show-progress https://github.com/HyNetwork/hysteria/releases/latest/download/hysteria-linux-amd64 -O hysteria
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/hysteria -O /usr/local/bin/hysteria
   chmod +x /usr/local/bin/hysteria
   systemctl enable hysteria --now
   info_hysteria
 }
 
 update_hysteria() {
-  latest_version=$(wget -qO- https://api.github.com/repos/HyNetwork/hysteria/releases/latest | awk -F'"' '/tag_name/ {print$4}')
+  latest_version=$(wget -qO- https://cdn.jsdelivr.net/gh/771073216/dist@main/version | awk '/hysteria/ {print$2}')
   local_version=$(/usr/local/bin/hysteria-linux-amd64 -v | awk '{print$3}')
   [ "$latest_version" == "$local_version" ] && exit 0
-  wget -q --show-progress https://github.com/HyNetwork/hysteria/releases/latest/download/hysteria-linux-amd64 -O hysteria
-  chmod +x /usr/local/bin/hysteria
+  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/hysteria -O /usr/local/bin/hysteria
   systemctl restart hysteria
   exit 0
 }
