@@ -45,11 +45,17 @@ info_xray() {
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install | info | uninstall)
-    ${action}_xray
+  install)
+    install_xray
+    ;;
+  -i)
+    info_xray
+    ;;
+  -u)
+    uninstall_xray
     ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|uninstall|info|-m]"
+    echo "使用方法：$(basename "$0") [install|-u uninstall|-i info]"
     ;;
 esac
