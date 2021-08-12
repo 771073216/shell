@@ -8,7 +8,7 @@ p='\033[0m'
 
 check_port(){
   port_status=$(lsof -i :443)
-  [ -z "$port_status" ] && echo "port 443 is used" && exit 1
+  [ -n "$port_status" ] && echo "port 443 is used" && exit 1
 }
 
 set_conf() {
