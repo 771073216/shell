@@ -6,6 +6,11 @@ p='\033[0m'
 
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
+check_port(){
+  port_status=$(lsof -i :443)
+  [ -z "$port_status" ] && echo "port 443 is used" && exit 1
+}
+
 set_conf() {
   cat > /usr/local/etc/hysteria/config.json <<- EOF
 {
@@ -43,6 +48,7 @@ EOF
 
 install_hysteria() {
   [ -f /usr/local/bin/hysteria ] && update_hysteria
+  check_port
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
   echo -e -n "[${g}Info${p}] 输入端口： "
