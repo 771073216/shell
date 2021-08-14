@@ -15,8 +15,8 @@ set_xray() {
   while ! [ -f $ssl_dir/"${domain}"/"${domain}".crt ]; do
     sleep 1
   done
-  sed -i s/:443/:80/g "/etc/caddy/Caddyfile"
-  systemctl restart caddy
+  ln -s $ssl_dir/"${domain}"/"${domain}".crt /usr/local/etc/xray/xray.crt
+  ln -s $ssl_dir/"${domain}"/"${domain}".key /usr/local/etc/xray/xray.key
   set_service
 }
 
@@ -31,7 +31,7 @@ inbounds:
       flow: xtls-rprx-direct
     decryption: none
     fallbacks:
-    - dest: 80
+    - dest: 8080
   streamSettings:
     network: tcp
     security: xtls
@@ -48,7 +48,15 @@ EOF
 
 set_caddy() {
   cat > /etc/caddy/Caddyfile <<- EOF
-${domain}:443 {
+http://${domain} {
+    redir https://{host}{uri}
+}
+
+https://${domain}:8443 {
+
+}
+
+${domain}:8080 {
     root * /var/www
     file_server
 }
@@ -61,11 +69,6 @@ set_bbr() {
   sed -i '/net.ipv4.tcp_congestion_control/d' '/etc/sysctl.conf'
   (echo "net.core.default_qdisc = fq" && echo "net.ipv4.tcp_congestion_control = bbr") >> '/etc/sysctl.conf'
   sysctl -p > /dev/null 2>&1
-}
-
-set_ssl() {
-  wget -qO- https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh | bash -s -- --install-online
-  /root/.acme.sh/acme.sh --issue -d "$domain" --standalone --keylength ec-256 --pre-hook "systemctl stop caddy xray" --post-hook "/root/.acme.sh/acme.sh --installcert -d $domain --ecc --fullchain-file /usr/local/etc/xray/xray.crt --key-file /usr/local/etc/xray/xray.key --reloadcmd \"systemctl restart caddy xray\""
 }
 
 set_service() {
@@ -92,7 +95,6 @@ install_xray() {
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
   mkdir -p /usr/local/etc/xray/ /etc/caddy/ /var/www/
-  set_ssl
   mkdir "$TMP_DIR"
   cd "$TMP_DIR" || exit 1
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
