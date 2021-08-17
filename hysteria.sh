@@ -6,7 +6,7 @@ p='\033[0m'
 
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
-check_port(){
+check_port() {
   port_status=$(lsof -i :80)
   [ -n "$port_status" ] && echo "port 80 is used" && exit 1
 }
