@@ -6,8 +6,10 @@ if grep security $path > /dev/null; then
   echo "deb http://security.debian.org/debian-security stable-security main" >> $path
   echo "deb-src http://security.debian.org/debian-security stable-security main" >> $path
 fi
-link=$(awk '{print$2}' $path | grep -v "security" | uniq)
-ver=$(awk '{print$3}' $path | grep -v "updates\|backports\|security" | uniq)
-backports=$(curl -sSL "$link"/dists/stable-backports/InRelease | awk '/Suite/ {print$2}')
-sed -i "s/$ver-backports/$backports/g" $path
+link=$(grep -v "security\|#" $path | awk '/deb/ {print$2}' | uniq)
+ver=$(grep -v "updates\|backports\|security\|#" $path | awk '/deb/ {print$3}' | uniq)
+if grep backports $path > /dev/null; then
+  backports=$(wget -qO- "$link"/dists/stable-backports/InRelease | awk '/Suite/ {print$2}')
+  sed -i "s/$ver-backports/$backports/g" $path
+fi
 sed -i "s/$ver/stable/g" $path
