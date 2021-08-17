@@ -60,7 +60,9 @@ install_hysteria() {
   set_conf
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/hysteria -O /usr/local/bin/hysteria
   chmod +x /usr/local/bin/hysteria
-  sysctl -w net.core.rmem_max=2500000
+  sed -i '/net.core.rmem_max/d' '/etc/sysctl.conf'
+  echo "net.core.rmem_max = 2500000" >> /etc/sysctl.conf
+  sysctl -p > /dev/null
   systemctl enable hysteria --now
   info_hysteria
 }
