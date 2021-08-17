@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 path="/etc/apt/sources.list"
+cp $path $path.bak
 if grep security $path > /dev/null; then
   sed -i '/security/d' $path
   echo "deb http://security.debian.org/debian-security stable-security main" >> $path
