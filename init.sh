@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-apt install bash-completion wget unzip
+apt install bash-completion wget unzip net-tools
 var0=$(echo "\$(dircolors -b ~/.dircolors)")
 var1=$(echo "\$(dircolors -b)")
 cat > .bashrc <<- EOF
