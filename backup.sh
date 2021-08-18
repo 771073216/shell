@@ -15,7 +15,7 @@ r() {
   cp -r backup/www/ /var/
   mv backup/sshd_config /etc/ssh/
   cp -r backup/.ssh/ .
-  cp -r backup/caddy/ /etc/
+  cp -r backup/caddy/ /usr/local/etc/
   cp -r backup/xray/ /usr/local/etc/
   mkdir /var/log/xray
   chown -R nobody:nogroup /var/log/xray
