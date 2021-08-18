@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-apt install bash-completion wget unzip net-tools
+apt install bash-completion unzip net-tools
 var0=$(echo "\$(dircolors -b ~/.dircolors)")
 var1=$(echo "\$(dircolors -b)")
-cat > .bashrc <<- EOF
+cat >> .bashrc <<- EOF
 if [ -x /usr/bin/dircolors ]; then
   test -r ~/.dircolors && eval "$var0" || eval "$var1"
   alias ls='ls --color=auto'
