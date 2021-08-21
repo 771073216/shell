@@ -37,6 +37,7 @@ CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 ExecStart=/usr/local/bin/hysteria -config /usr/local/etc/hysteria/config.json server
+Environment=HYSTERIA_LOG_LEVEL=info
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
