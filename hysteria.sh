@@ -7,6 +7,9 @@ p='\033[0m'
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
 check_port() {
+  if ! command -v lsof > /dev/null; then
+    apt install lsof
+  fi
   port_status=$(lsof -i :80)
   [ -n "$port_status" ] && echo "port 80 is used" && exit 1
 }
@@ -32,9 +35,9 @@ set_service() {
 Description=hysteria Service
 After=network.target nss-lookup.target
 [Service]
-User=root
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+User=nobody
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 ExecStart=/usr/local/bin/hysteria -config /usr/local/etc/hysteria/config.json server
 Environment=HYSTERIA_LOG_LEVEL=info
@@ -89,8 +92,8 @@ info_hysteria() {
   status=$(pgrep hysteria)
   [ ! -f /usr/local/etc/hysteria/config.json ] && echo -e "[${r}Error${p}] 未找到hysteria配置文件！" && exit 1
   [ -z "$status" ] && hysteria_status="${r}已停止${p}" || hysteria_status="${g}正在运行${p}"
-  echo -e " port： $(awk -F'[":]+' '/listen/ {print$4}' /usr/local/etc/hysteria/config.json)"
-  echo -e " password： $(awk -F'"' '/obfs/ {print$4}' /usr/local/etc/hysteria/config.json)"
+  echo -e " port： ${y}$(awk -F'[":]+' '/listen/ {print$4}' /usr/local/etc/hysteria/config.json)${p}"
+  echo -e " password： ${y}$(awk -F'"' '/obfs/ {print$4}' /usr/local/etc/hysteria/config.json)${p}"
   echo -e " hysteria运行状态：${hysteria_status}"
 }
 

@@ -7,7 +7,7 @@ p='\033[0m'
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
 install_xray() {
-  if dpkg -l | grep xray; then
+  if dpkg -l | grep xray > /dev/null; then
     update_xray
   fi
   echo -e -n "[${g}Info${p}] 输入域名： "

@@ -60,7 +60,7 @@ set_conf() {
 }
 
 install_xray() {
-  if dpkg -l | grep xray; then
+  if dpkg -l | grep xray > /dev/null; then
     update_xray
   fi
   echo -e -n "[${g}Info${p}] 输入域名： "

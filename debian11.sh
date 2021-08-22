@@ -4,7 +4,6 @@ cp $path $path.bak
 if grep security $path > /dev/null; then
   sed -i '/security/d' $path
   echo "deb http://security.debian.org/debian-security stable-security main" >> $path
-  echo "deb-src http://security.debian.org/debian-security stable-security main" >> $path
 fi
 link=$(grep -v "security\|#" $path | awk '/deb/ {print$2}' | uniq)
 ver=$(grep -v "updates\|backports\|security\|#" $path | awk '/deb/ {print$3}' | uniq)

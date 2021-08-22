@@ -4,7 +4,7 @@ b() {
   cp -r /var/www/ backup/
   cp /etc/ssh/sshd_config backup/
   cp -r .ssh/ backup/
-  cp -r /etc/caddy/ backup/
+  cp -r /usr/local/etc/caddy/ backup/
   cp -r /usr/local/etc/xray/ backup/
   zip -r backup.zip backup/
   rm -r backup/
@@ -17,8 +17,6 @@ r() {
   cp -r backup/.ssh/ .
   cp -r backup/caddy/ /usr/local/etc/
   cp -r backup/xray/ /usr/local/etc/
-  mkdir /var/log/xray
-  chown -R nobody:nogroup /var/log/xray
   rm -r backup/
   rm backup.zip
   systemctl restart xray caddy sshd
