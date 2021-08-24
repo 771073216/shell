@@ -14,7 +14,7 @@ check_port() {
   [ -n "$port_status" ] && echo "port 80 is used" && exit 1
 }
 
-set_conf() {
+set_conf1() {
   cat > /usr/local/etc/hysteria/config.json <<- EOF
 {
   "listen": ":$port",
@@ -28,6 +28,18 @@ set_conf() {
 }
 EOF
 }
+
+set_conf2() {
+  cat > /usr/local/etc/hysteria/config.json <<- EOF
+{
+  "listen": ":$port",
+  "cert": "/path/to/your.crt",
+  "key": "/path/to/your.key",
+  "obfs": "$passwd"
+}
+EOF
+}
+
 
 set_service() {
   cat > /etc/systemd/system/hysteria.service <<- EOF
@@ -53,6 +65,8 @@ EOF
 install_hysteria() {
   [ -f /usr/local/bin/hysteria ] && update_hysteria
   check_port
+  echo -e -n "[${g}Info${p}] get ssl (1/auto 2/mamul):"
+  read -r select
   echo -e -n "[${g}Info${p}] 输入域名： "
   read -r domain
   echo -e -n "[${g}Info${p}] 输入端口： "
@@ -61,7 +75,11 @@ install_hysteria() {
   read -r passwd
   mkdir -p /usr/local/etc/hysteria/
   set_service
-  set_conf
+  if [ "$select" -eq 1 ]; then
+    set_conf1
+  else
+    set_conf2
+  fi
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/linux/hysteria -O /usr/local/bin/hysteria
   chmod +x /usr/local/bin/hysteria
   sed -i '/net.core.rmem_max/d' '/etc/sysctl.conf'
