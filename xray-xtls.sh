@@ -84,7 +84,7 @@ update_xray() {
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
     wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
-    dpkg -i xray.deb && rm xray.deb
+    echo | dpkg -i xray.deb && rm xray.deb
     echo -e "[${g}Info${p}] 更新成功！"
   else
     echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}"
