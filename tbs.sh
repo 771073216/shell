@@ -1,16 +1,9 @@
-#!/bin/bash
-num=0
-list=$(find /data/data/ -name "app_tbs*")
-for file in $list; do
-  if find "${file}"/* > /dev/null 2>&1; then
-    rm -r "${file:?}"/*
-    chattr -i "$file"
-    chmod 000 "$file"
-    num=$((num + 1))
+#!/bin/sh
+for dir in $(cmd package list package -3 | awk -F':' '{print$2}'); do
+  if find /data/data/$dir/app_tbs > /dev/null 2>&1; then
+    rm -rf /data/data/$dir/app_tbs*/*
+    chattr -i /data/data/$dir/app_tbs*
+    chmod 000 /data/data/$dir/app_tbs*
+    echo "Clean $dir"
   fi
 done
-if [ $num -ne 0 ]; then
-  echo "delete $num folder"
-else
-  echo "not found app_tbs"
-fi
