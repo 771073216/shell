@@ -15,3 +15,10 @@ done
 if [ "$i" -eq 0 ]; then
   echo "Everything is clean."
 fi
+
+if [ -n "$(ls /data/data/com.xiaomi.market/app_analytics)" ]; then
+  rm -rf /data/data/com.xiaomi.market/app_analytics/*
+  chattr -i /data/data/com.xiaomi.market/app_analytics
+  chmod 000 /data/data/com.xiaomi.market/app_analytics
+  echo "miui analytics has been removed"
+fi
