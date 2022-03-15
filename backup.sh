@@ -22,10 +22,5 @@ r() {
   systemctl restart xray caddy sshd
 }
 
-action=$1
+$1
 [ -z "$1" ] && echo "b|r" && exit 0
-case "$action" in
-  b | r)
-    $action
-    ;;
-esac

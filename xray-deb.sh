@@ -17,7 +17,6 @@ install_xray() {
   wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
   dpkg -i xray.deb && rm xray.deb
   sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
-  sed -i "s/owndomain/$domain/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
   systemctl restart xray caddy
   info_xray
@@ -45,7 +44,7 @@ uninstall_xray() {
 }
 
 info_xray() {
-  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml | head -n1)
+  password=$(awk -F'"' '/password:/ {print$2}' /usr/local/etc/xray/config.yaml)
   domain=$(awk 'NR==1 {print$1}' /usr/local/etc/caddy/Caddyfile)
   xraystatus=$(pgrep xray)
   caddystatus=$(pgrep caddy)
@@ -54,10 +53,7 @@ info_xray() {
   [ -z "$caddystatus" ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
   echo -e " 分享码 (grpc)："
-  echo -e " ${r}vless://${uuid}@${domain}:443?type=grpc&encryption=none&security=tls&serviceName=grpc#grpc${p}"
-  echo
-  echo -e " uuid:"
-  echo -e " ${y}$(xray uuid -i "$uuid")${p}"
+  echo -e " ${r}trojan://${password}@${domain}:443?type=grpc&security=tls&serviceName=grpc&mode=gun#grpc${p}"
 }
 
 action=$1
