@@ -1,12 +1,11 @@
 #!/bin/sh
 echo "[1] restart mosdns"
-echo "[2] cat mosdns log"
-echo "[3] update mosdns"
-echo "[4] update geofile"
-echo "[stop] stop mosdns"
-echo "[start] start mosdns"
-echo "[install] install mosdns"
-echo "[redis] install redis-server"
+echo "[2] update mosdns"
+echo "[3] update geofile"
+echo "[4] stop mosdns"
+echo "[5] start mosdns"
+echo "[6] install mosdns"
+echo "[7] install redis-server"
 printf "[input]: "
 read -r select
 
@@ -24,11 +23,6 @@ if [ "$select" = 1 ]; then
 fi
 
 if [ "$select" = 2 ]; then
-  log_file=$(awk -F"'" '/log/&&/file/{print$2}' /etc/mosdns/config.yaml)
-  cat "$log_file"
-fi
-
-if [ "$select" = 3 ]; then
   local_ver=$(mosdns -v | awk -F"-" '{print$1}')
   remote_ver=$(curl -sSL https://api.github.com/repos/IrineSistiana/mosdns/releases/latest | awk -F'"' '/tag_name/{print$4}')
   if [ "$local_ver" = "$remote_ver" ]; then
@@ -46,7 +40,7 @@ if [ "$select" = 3 ]; then
   /etc/init.d/mosdns restart
 fi
 
-if [ "$select" = 4 ]; then
+if [ "$select" = 3 ]; then
   version=$(curl -sSL "https://api.github.com/repos/771073216/geofile/releases/latest" | awk -F '"' '/tag_name/ {print $4}')
   if [ -e /usr/share/v2ray/version ]; then
     local_ver=$(cat /usr/share/v2ray/version)
@@ -60,7 +54,7 @@ if [ "$select" = 4 ]; then
   fi
 fi
 
-if [ "$select" = "stop" ]; then
+if [ "$select" = 4 ]; then
   /etc/init.d/mosdns stop
   uci delete dhcp.@dnsmasq[0].server
   uci set dhcp.@dnsmasq[0].noresolv=0
@@ -70,7 +64,7 @@ if [ "$select" = "stop" ]; then
   /etc/init.d/dnsmasq restart &
 fi
 
-if [ "$select" = "start" ]; then
+if [ "$select" = 5 ]; then
   /etc/init.d/mosdns start
   port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /addr/{print$3}')
   uci delete dhcp.@dnsmasq[0].server
@@ -81,7 +75,7 @@ if [ "$select" = "start" ]; then
   /etc/init.d/dnsmasq restart &
 fi
 
-if [ "$select" = "install" ]; then
+if [ "$select" = 6 ]; then
   mkdir /tmp/mosdns-install /etc/mosdns
   wget https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -O /tmp/mosdns-install/mosdns.zip
   unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
@@ -91,7 +85,7 @@ if [ "$select" = "install" ]; then
   rm -r /tmp/mosdns-install
 fi
 
-if [ "$select" = "redis" ]; then
+if [ "$select" = 7 ]; then
   mkdir /usr/share/redis
   file=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
   wget https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -O /root/"$file"
