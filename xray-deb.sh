@@ -14,7 +14,7 @@ install_xray() {
   read -r domain
   echo -e -n "[${g}Info${p}] 输入密码： "
   read -r passwd
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
+  wget -q --show-progress https://gcore.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
   dpkg -i xray.deb && rm xray.deb
   sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
@@ -23,11 +23,11 @@ install_xray() {
 }
 
 update_xray() {
-  remote_version=$(wget -qO- "https://cdn.jsdelivr.net/gh/771073216/deb@main/version" | tr "\n" " " | awk '{print$2 "+" $4}')
+  remote_version=$(wget -qO- "https://gcore.jsdelivr.net/gh/771073216/deb@main/version" | tr "\n" " " | awk '{print$2 "+" $4}')
   local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
+    wget -q --show-progress https://gcore.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
     dpkg -i --force-confold xray.deb && rm xray.deb
     echo
     echo -e "[${g}Info${p}] 更新成功！"
