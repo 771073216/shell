@@ -29,7 +29,7 @@ if [ "$select" = 2 ]; then
     return
   fi
   mkdir /tmp/mosdns-update
-  curl -sSL https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-update/mosdns.zip
+  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-update/mosdns.zip
   unzip /tmp/mosdns-update/mosdns.zip mosdns -d /tmp/mosdns-update
   rm /usr/bin/mosdns
   mv /tmp/mosdns-update/mosdns /usr/bin/mosdns
@@ -48,8 +48,8 @@ if [ "$select" = 3 ]; then
     local_ver=0
   fi
   if [ "$version" != "$local_ver" ]; then
-    wget -q https://github.com/771073216/geofile/releases/latest/download/geoip.dat -O /usr/share/v2ray/geoip.dat
-    wget -q https://github.com/771073216/geofile/releases/latest/download/geosite.dat -O /usr/share/v2ray/geosite.dat
+    curl -L https://github.com/771073216/geofile/releases/latest/download/geoip.dat -o /usr/share/v2ray/geoip.dat
+    curl -L https://github.com/771073216/geofile/releases/latest/download/geosite.dat -o /usr/share/v2ray/geosite.dat
     echo "$version" > /usr/share/v2ray/version
   fi
 fi
@@ -77,9 +77,9 @@ fi
 
 if [ "$select" = 6 ]; then
   mkdir /tmp/mosdns-install /etc/mosdns
-  wget https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -O /tmp/mosdns-install/mosdns.zip
+  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-install/mosdns.zip
   unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
-  wget https://raw.githubusercontent.com/IrineSistiana/mosdns/main/scripts/openwrt/mosdns-init-openwrt -O /etc/init.d/mosdns
+  curl -L https://raw.githubusercontent.com/IrineSistiana/mosdns/main/scripts/openwrt/mosdns-init-openwrt -o /etc/init.d/mosdns
   chmod +x /etc/init.d/mosdns
   /etc/init.d/mosdns enable
   rm -r /tmp/mosdns-install
@@ -88,5 +88,5 @@ fi
 if [ "$select" = 7 ]; then
   mkdir /usr/share/redis
   file=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
-  wget https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -O /root/"$file"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o /root/"$file"
 fi
