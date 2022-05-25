@@ -10,6 +10,7 @@ printf "[input]: "
 read -r select
 
 arch=$(awk -F'"' '/OPENWRT_ARCH/{print$2}' /etc/os-release)
+board=$(awk -F'"' '/OPENWRT_BOARD/{print$2}' /etc/os-release)
 if [ "$arch" = "x86_64" ]; then
   mosdns_arch="amd64"
 else
@@ -88,5 +89,10 @@ fi
 if [ "$select" = 7 ]; then
   mkdir /usr/share/redis
   file=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
-  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o /root/"$file"
+  dep_atomtic=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libatomic1/ {print$2}')
+  dep_pthread=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libpthread/ {print$2}')
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o "$(pwd)"/"$file"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_atomtic" -o "$(pwd)"/"$dep_atomtic"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$(pwd)"/"$dep_pthread"
+  opkg install "$dep_atomtic" "$dep_pthread" "$file"
 fi
