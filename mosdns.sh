@@ -18,8 +18,8 @@ else
 fi
 
 if [ "$select" = 1 ]; then
-  log_file=$(awk -F"'" '/log/&&/file/{print$2}' /etc/mosdns/config.yaml)
-  echo "" > "$log_file"
+  log_file=$(awk -F"'" '/file:/{print$2}' /etc/mosdns/config.yaml)
+  rm "$log_file"
   /etc/init.d/mosdns restart
 fi
 
@@ -36,8 +36,8 @@ if [ "$select" = 2 ]; then
   mv /tmp/mosdns-update/mosdns /usr/bin/mosdns
   rm -r /tmp/mosdns-update
   echo "$local_ver -> $remote_ver"
-  log_file=$(awk -F"'" '/log/&&/file/{print$2}' /etc/mosdns/config.yaml)
-  echo "" > "$log_file"
+  log_file=$(awk -F"'" '/file:/{print$2}' /etc/mosdns/config.yaml)
+  rm "$log_file"
   /etc/init.d/mosdns restart
 fi
 
@@ -91,8 +91,8 @@ if [ "$select" = 7 ]; then
   file=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
   dep_atomtic=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libatomic1/ {print$2}')
   dep_pthread=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libpthread/ {print$2}')
-  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o "$(pwd)"/"$file"
-  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_atomtic" -o "$(pwd)"/"$dep_atomtic"
-  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$(pwd)"/"$dep_pthread"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o "$file"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_atomtic" -o "$dep_atomtic"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$dep_pthread"
   opkg install "$dep_atomtic" "$dep_pthread" "$file"
 fi
