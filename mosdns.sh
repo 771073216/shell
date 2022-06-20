@@ -68,7 +68,10 @@ fi
 if [ "$select" = 5 ]; then
   /etc/init.d/mosdns start
   port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /addr/{print$3}')
-  uci delete dhcp.@dnsmasq[0].server
+  server=$(uci get dhcp.@dnsmasq[0].server)
+  if [ "$server" != "" ]; then
+    uci delete dhcp.@dnsmasq[0].server
+  fi
   uci add_list dhcp.@dnsmasq[0].server="127.0.0.1#$port"
   uci set dhcp.@dnsmasq[0].noresolv=1
   uci set dhcp.@dnsmasq[0].cachesize=0
@@ -79,8 +82,8 @@ fi
 if [ "$select" = 6 ]; then
   mkdir /tmp/mosdns-install /etc/mosdns
   curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-install/mosdns.zip
-  unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
   curl -L https://raw.githubusercontent.com/IrineSistiana/mosdns/main/scripts/openwrt/mosdns-init-openwrt -o /etc/init.d/mosdns
+  unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
   chmod +x /etc/init.d/mosdns
   /etc/init.d/mosdns enable
   rm -r /tmp/mosdns-install
@@ -88,11 +91,22 @@ fi
 
 if [ "$select" = 7 ]; then
   mkdir /usr/share/redis
-  file=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
+  conf_path="/etc/redis.conf"
+  redis=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
   dep_atomtic=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libatomic1/ {print$2}')
   dep_pthread=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libpthread/ {print$2}')
-  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$file" -o "$file"
+  curl -L https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/"$redis" -o "$redis"
   curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_atomtic" -o "$dep_atomtic"
   curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$dep_pthread"
-  opkg install "$dep_atomtic" "$dep_pthread" "$file"
+  opkg install "$dep_atomtic" "$dep_pthread" "$redis"
+  sed -i '/^maxmemory /d' $conf_path
+  sed -i '/^maxmemory-policy /d' $conf_path
+  sed -i '/^dbfilename /d' $conf_path
+  sed -i '/^dir /d' $conf_path
+  {
+    echo "maxmemory 8mb"
+    echo "maxmemory-policy allkeys-lru"
+    echo "dbfilename dns.rdb"
+    echo "dir /usr/share/redis"
+  } >> $conf_path
 fi
