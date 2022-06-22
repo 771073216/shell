@@ -40,23 +40,25 @@ set_conf2() {
 EOF
 }
 
-
 set_service() {
   cat > /etc/systemd/system/hysteria.service <<- EOF
 [Unit]
-Description=hysteria Service
-After=network.target nss-lookup.target
+Description=Hysteria, a feature-packed network utility optimized for networks of poor quality
+Documentation=https://github.com/HyNetwork/hysteria/wiki
+After=network.target
+
 [Service]
 User=nobody
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/hysteria -config /usr/local/etc/hysteria/config.json server
+WorkingDirectory=/etc/hysteria
 Environment=HYSTERIA_LOG_LEVEL=info
+ExecStart=/usr/local/bin/hysteria -c /usr/local/etc/hysteria/config.json server
 Restart=on-failure
-RestartPreventExitStatus=23
-LimitNPROC=10000
-LimitNOFILE=1000000
+RestartPreventExitStatus=1
+RestartSec=5
+
 [Install]
 WantedBy=multi-user.target
 EOF

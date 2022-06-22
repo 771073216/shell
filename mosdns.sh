@@ -18,7 +18,7 @@ else
 fi
 
 if [ "$select" = 1 ]; then
-  log_file=$(awk -F"'" '/file:/{print$2}' /etc/mosdns/config.yaml)
+  log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
   rm "$log_file"
   /etc/init.d/mosdns restart
 fi
@@ -36,7 +36,7 @@ if [ "$select" = 2 ]; then
   mv /tmp/mosdns-update/mosdns /usr/bin/mosdns
   rm -r /tmp/mosdns-update
   echo "$local_ver -> $remote_ver"
-  log_file=$(awk -F"'" '/file:/{print$2}' /etc/mosdns/config.yaml)
+  log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
   rm "$log_file"
   /etc/init.d/mosdns restart
 fi
