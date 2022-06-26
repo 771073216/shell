@@ -19,12 +19,12 @@ fi
 
 if [ "$select" = 1 ]; then
   log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
-  rm "$log_file"
+  [ -e "$log_file" ] && rm "$log_file"
   /etc/init.d/mosdns restart
 fi
 
 if [ "$select" = 2 ]; then
-  local_ver=$(mosdns -v | awk -F"-" '{print$1}')
+  local_ver=$(mosdns version | awk -F"-" '{print$1}')
   remote_ver=$(curl -sSL https://api.github.com/repos/IrineSistiana/mosdns/releases/latest | awk -F'"' '/tag_name/{print$4}')
   if [ "$local_ver" = "$remote_ver" ]; then
     return
@@ -37,7 +37,7 @@ if [ "$select" = 2 ]; then
   rm -r /tmp/mosdns-update
   echo "$local_ver -> $remote_ver"
   log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
-  rm "$log_file"
+  [ -e "$log_file" ] && rm "$log_file"
   /etc/init.d/mosdns restart
 fi
 
