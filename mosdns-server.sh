@@ -37,7 +37,8 @@ EnvironmentFile=-/etc/sysconfig/mosdns
 [Install]
 WantedBy=multi-user.target
 EOF
-  cat > /usr/local/etc/mosdns/config.yaml <<- EOF
+
+  [ -e /usr/local/etc/mosdns/config.yaml ] || cat > /usr/local/etc/mosdns/config.yaml <<- EOF
 log:
   level: info
   file: "/tmp/mosdns.log"
