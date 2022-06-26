@@ -11,7 +11,7 @@ if [ "$select" = 1 ]; then
   if [ "$local_ver" = "$remote_ver" ]; then
     return
   fi
-  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-amd64.zip
+  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-amd64.zip -o mosdns-linux-amd64.zip
   unzip -o mosdns-linux-amd64.zip mosdns -d /usr/local/bin/
   rm mosdns-linux-amd64.zip
   echo "$local_ver -> $remote_ver"
@@ -60,7 +60,7 @@ servers:
       - protocol: tcp
         addr: 127.0.0.1:53
 EOF
-  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-amd64.zip
+  curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-amd64.zip -o mosdns-linux-amd64.zip
   unzip mosdns-linux-amd64.zip mosdns -d /usr/local/bin/
   rm mosdns-linux-amd64.zip
   systemctl enable mosdns.service --now
