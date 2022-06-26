@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-apt install bash-completion unzip net-tools
+apt install -y bash-completion unzip net-tools dnsutils
 cat >> "${HOME}"/.bashrc <<- EOF
 if [ -x /usr/bin/dircolors ]; then
   test -r ~/.dircolors && eval "\$(dircolors -b ~/.dircolors)" || eval "\$(dircolors -b)"
