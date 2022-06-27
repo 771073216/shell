@@ -8,6 +8,7 @@ main() {
   fi
   curl -L https://raw.githubusercontent.com/771073216/deb/main/vnstat.deb -o vnstat.deb
   dpkg -i vnstat.deb
+  rm vnstat.deb
 }
 
 update() {
@@ -18,6 +19,7 @@ update() {
   fi
   curl -L https://raw.githubusercontent.com/771073216/deb/main/vnstat.deb -o vnstat.deb
   dpkg -i vnstat.deb
+  rm vnstat.deb
 }
 
 main
