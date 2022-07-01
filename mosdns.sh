@@ -17,9 +17,13 @@ else
   mosdns_arch="arm64"
 fi
 
-if [ "$select" = 1 ]; then
+clean_log() {
   log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
   [ -e "$log_file" ] && rm "$log_file"
+}
+
+if [ "$select" = 1 ]; then
+  clean_log
   /etc/init.d/mosdns restart
 fi
 
@@ -36,8 +40,7 @@ if [ "$select" = 2 ]; then
   mv /tmp/mosdns-update/mosdns /usr/bin/mosdns
   rm -r /tmp/mosdns-update
   echo "$local_ver -> $remote_ver"
-  log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
-  [ -e "$log_file" ] && rm "$log_file"
+  clean_log
   /etc/init.d/mosdns restart
 fi
 
@@ -57,6 +60,7 @@ fi
 
 if [ "$select" = 4 ]; then
   /etc/init.d/mosdns stop
+  clean_log
   uci delete dhcp.@dnsmasq[0].server
   uci set dhcp.@dnsmasq[0].noresolv=0
   uci delete dhcp.@dnsmasq[0].cachesize
@@ -67,6 +71,7 @@ fi
 
 if [ "$select" = 5 ]; then
   /etc/init.d/mosdns start
+  clean_log
   port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /addr/{print$3}')
   server=$(uci get dhcp.@dnsmasq[0].server)
   if [ "$server" != "" ]; then
