@@ -49,8 +49,8 @@ if [ "$select" = 3 ]; then
     local_ver=0
   fi
   if [ "$version" != "$local_ver" ]; then
-    curl -L https://github.com/771073216/geofile/releases/latest/download/geoip.dat -o /usr/share/v2ray/geoip.dat
-    curl -L https://github.com/771073216/geofile/releases/latest/download/geosite.dat -o /usr/share/v2ray/geosite.dat
+    curl -L https://raw.githubusercontent.com/771073216/geofile/release/geoip.dat -o /usr/share/v2ray/geoip.dat
+    curl -L https://raw.githubusercontent.com/771073216/geofile/release/geosite.dat -o /usr/share/v2ray/geosite.dat
     echo "$version" > /usr/share/v2ray/version
   fi
 fi
