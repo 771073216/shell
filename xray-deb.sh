@@ -23,7 +23,9 @@ install_xray() {
 }
 
 update_xray() {
-  remote_version=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | tr "\n" " " | awk '{print$2 "+" $4}')
+  xray_verison=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | awk '/xray/{print$2}')
+  caddy_verison=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | awk '/caddy/{print$2}')
+  remote_version=$xray_verison"+"$caddy_verison
   local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
@@ -32,7 +34,7 @@ update_xray() {
     echo
     echo -e "[${g}Info${p}] 更新成功！"
   else
-    echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}"
+    echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}  (latest)"
   fi
   exit 0
 }
