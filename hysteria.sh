@@ -52,7 +52,6 @@ User=nobody
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
 AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
 NoNewPrivileges=true
-WorkingDirectory=/etc/hysteria
 Environment=HYSTERIA_LOG_LEVEL=info
 ExecStart=/usr/local/bin/hysteria -c /usr/local/etc/hysteria/config.json server
 Restart=on-failure
