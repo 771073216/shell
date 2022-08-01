@@ -104,6 +104,7 @@ if [ "$select" = 7 ]; then
   curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_atomtic" -o "$dep_atomtic"
   curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$dep_pthread"
   opkg install "$dep_atomtic" "$dep_pthread" "$redis"
+  rm "$dep_atomtic" "$dep_pthread" "$redis"
   sed -i '/^maxmemory /d' $conf_path
   sed -i '/^maxmemory-policy /d' $conf_path
   sed -i '/^dbfilename /d' $conf_path
