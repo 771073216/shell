@@ -6,6 +6,8 @@ echo "[4] stop mosdns"
 echo "[5] start mosdns"
 echo "[6] install mosdns"
 echo "[7] install redis-server"
+echo "[8] setup redis-server"
+echo "[9] setup mosdns"
 printf "[input]: "
 read -r select
 
@@ -96,7 +98,6 @@ fi
 
 if [ "$select" = 7 ]; then
   mkdir /usr/share/redis
-  conf_path="/etc/redis.conf"
   redis=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/packages/"$arch"/packages/ | awk -F'"' '/redis-server/ {print$2}')
   dep_atomtic=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libatomic1/ {print$2}')
   dep_pthread=$(curl -s https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/ | awk -F'"' '/libpthread/ {print$2}')
@@ -105,6 +106,11 @@ if [ "$select" = 7 ]; then
   curl -L https://mirrors.cloud.tencent.com/lede/snapshots/targets/"$board"/packages/"$dep_pthread" -o "$dep_pthread"
   opkg install "$dep_atomtic" "$dep_pthread" "$redis"
   rm "$dep_atomtic" "$dep_pthread" "$redis"
+fi
+
+if [ "$select" = 8 ]; then
+  mkdir /usr/share/redis
+  conf_path="/etc/redis.conf"
   sed -i '/^maxmemory /d' $conf_path
   sed -i '/^maxmemory-policy /d' $conf_path
   sed -i '/^dbfilename /d' $conf_path
@@ -115,4 +121,63 @@ if [ "$select" = 7 ]; then
     echo "dbfilename dns.rdb"
     echo "dir /usr/share/redis"
   } >> $conf_path
+fi
+
+if [ "$select" = 9 ]; then
+  cat >> /etc/mosdns/config.yaml <<- EOF
+log:
+  level: info
+  file: "/tmp/mosdns.log"
+
+plugins:
+  - tag: cache
+    type: cache
+    args:
+      size: 4096
+      redis: 'redis://localhost:6379/0'
+      lazy_cache_ttl: 86400
+
+  - tag: forward_local
+    type: fast_forward
+    args:
+      upstream:
+        - addr: 61.134.1.5
+        - addr: 218.30.19.50
+
+  - tag: forward_remote
+    type: fast_forward
+    args:
+      upstream:
+        - addr: tls://1.1.1.1
+          enable_pipeline: true
+
+  - tag: local_sequence
+    type: sequence
+    args:
+      exec:
+        - cache
+        - forward_local
+
+  - tag: remote_sequence
+    type: sequence
+    args:
+      exec:
+        - cache
+        - forward_remote
+
+servers:
+  - exec: local_sequence
+    listeners:
+      - protocol: udp
+        addr: 127.0.0.1:5335
+      - protocol: tcp
+        addr: 127.0.0.1:5335
+
+  - exec: remote_sequence
+    listeners:
+      - protocol: udp
+        addr: 127.0.0.1:6053
+      - protocol: tcp
+        addr: 127.0.0.1:6053
+EOF
 fi
