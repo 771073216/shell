@@ -3,7 +3,7 @@
 init() {
   sudo apt update -y
   sudo apt full-upgrade -y
-  sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+  sudo apt install -y ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential \
     bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
     git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev \
     libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz \
@@ -53,7 +53,7 @@ modify() {
     sed -i "s/$b//g" target/linux/x86/Makefile
   done
   sed -i '/^[[:space:]]*\\/d' target/linux/x86/Makefile
-  sed -i 's|[[:space:]]\{2,\}\\| \\|g' target/linux/x86/Makefile
+  sed -i 's|[[:space:]]\{2,\}| |g' target/linux/x86/Makefile
 
   sed -i 's/^\th=${g}.*/\th=${a}${b}${c}${d}${e}${f}/g' package/lean/autocore/files/x86/autocore
   sed -i "/TEMP=/d" package/lean/autocore/files/x86/sbin/cpuinfo
