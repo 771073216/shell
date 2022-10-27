@@ -19,6 +19,7 @@ install_xray() {
   sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
   sed -i "1c$domain {" /usr/local/etc/caddy/Caddyfile
   systemctl restart xray caddy
+  state_xray
   info_xray
 }
 
@@ -33,6 +34,7 @@ update_xray() {
     dpkg -i --force-confold xray.deb && rm xray.deb
     echo
     echo -e "[${g}Info${p}] 更新成功！"
+    state_xray
   else
     echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}  (latest)"
   fi
@@ -48,14 +50,17 @@ uninstall_xray() {
 info_xray() {
   password=$(awk -F'"' '/password:/ {print$2}' /usr/local/etc/xray/config.yaml)
   domain=$(awk 'NR==1 {print$1}' /usr/local/etc/caddy/Caddyfile)
+  echo -e " 分享码 (grpc)："
+  echo -e " ${r}trojan://${password}@${domain}:443?type=grpc&security=tls&serviceName=grpc&mode=gun#grpc${p}"
+}
+
+state_xray() {
   xraystatus=$(pgrep xray)
   caddystatus=$(pgrep caddy)
   echo
   [ -z "$xraystatus" ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
   [ -z "$caddystatus" ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
   echo
-  echo -e " 分享码 (grpc)："
-  echo -e " ${r}trojan://${password}@${domain}:443?type=grpc&security=tls&serviceName=grpc&mode=gun#grpc${p}"
 }
 
 action=$1
