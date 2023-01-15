@@ -8,27 +8,44 @@ ssl_dir=/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.
 
 set_xray() {
   cat > /usr/local/etc/xray/config.yaml <<- EOF
+log:
+  loglevel: warning
 inbounds:
 - port: 443
   protocol: vless
   settings:
     clients:
-    - id: "${passwd}"
-      flow: xtls-rprx-direct
+    - id: ${passwd}
+      flow: xtls-rprx-vision
     decryption: none
     fallbacks:
-    - dest: 8080
+    - dest: '8080'
+      xver: 1
   streamSettings:
     network: tcp
-    security: xtls
-    xtlsSettings:
-      alpn:
-      - http/1.1
+    security: tls
+    tlsSettings:
+      rejectUnknownSni: true
+      minVersion: '1.2'
       certificates:
-      - certificateFile: "/usr/local/etc/xray/xray.crt"
-        keyFile: "/usr/local/etc/xray/xray.key"
+      - certificateFile: "/usr/local/etc/xray/fullchain.cer"
+        keyFile: "/usr/local/etc/xray/private.key"
+  sniffing:
+    enabled: true
+    destOverride:
+    - http
+    - tls
 outbounds:
 - protocol: freedom
+  tag: direct
+policy:
+  levels:
+    '0':
+      handshake: 2
+      connIdle: 120
+      uplinkOnly: 1
+      downlinkOnly: 1
+
 EOF
 }
 
@@ -55,8 +72,38 @@ set_conf() {
   done
   set_xray
   set_caddy
-  ln -s $ssl_dir/"${domain}"/"${domain}".crt /usr/local/etc/xray/xray.crt
-  ln -s $ssl_dir/"${domain}"/"${domain}".key /usr/local/etc/xray/xray.key
+  copy_ca
+}
+
+copy_ca() {
+  cp $ssl_dir/"${domain}"/"${domain}".crt /usr/local/share/xray/fullchain.cer
+  cp $ssl_dir/"${domain}"/"${domain}".key /usr/local/share/xray/private.key
+  cat > /usr/local/share/xray/update.sh <<- EOF
+#!/bin/bash
+dir="/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
+cer="\${dir}${domain}/${domain}.crt"
+key="\${dir}${domain}/${domain}.key"
+renew_time=\$(stat -c %Y \$cer)
+if [ -e "/usr/local/share/xray/renew" ]; then
+  local_time=\$(cat /usr/local/share/xray/renew)
+  if [ "\$renew_time" != "\$local_time" ]; then
+    echo "updating"
+    rm /usr/local/share/xray/fullchain.cer /usr/local/share/xray/private.key
+    cp \$cer /usr/local/share/xray/fullchain.cer
+    cp \$key /usr/local/share/xray/private.key
+    echo "\$renew_time" > /usr/local/share/xray/renew
+        echo "done"
+  fi
+else
+  echo "\$renew_time" > /usr/local/share/xray/renew
+fi
+EOF
+  chmod +x /usr/local/share/xray/update.sh
+  crontab -l | grep -v "0 0 \* \* 1 bash /usr/local/share/xray/update.sh" | crontab
+  (
+    crontab -l
+    echo "0 0 * * 1 bash /usr/local/share/xray/update.sh"
+  ) | crontab
 }
 
 install_xray() {
@@ -67,11 +114,7 @@ install_xray() {
   read -r domain
   echo -e -n "[${g}Info${p}] 输入密码： "
   read -r passwd
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/dist@main/caddy.deb
-  dpkg -i caddy.deb
-  set_caddy
-  systemctl restart caddy
-  wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
+  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/xray.deb -O xray.deb
   dpkg -i xray.deb && rm xray.deb
   set_conf
   systemctl restart xray caddy
@@ -79,16 +122,19 @@ install_xray() {
 }
 
 update_xray() {
-  remote_version=$(wget -qO- "https://cdn.jsdelivr.net/gh/771073216/deb@main/version" | tr "\n" " " | awk '{print$2 "+" $4}')
+  xray_verison=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | awk '/xray/{print$2}')
+  caddy_verison=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | awk '/caddy/{print$2}')
+  remote_version=$xray_verison"+"$caddy_verison
   local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
   if ! [ "${remote_version}" == "${local_version}" ]; then
     echo -e "| ${y}xray+caddy${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
-    wget -q --show-progress https://cdn.jsdelivr.net/gh/771073216/deb@main/xray.deb -O xray.deb
+    curl -L https://raw.githubusercontent.com/771073216/deb/main/xray.deb -o xray.deb
     dpkg -i --force-confold xray.deb && rm xray.deb
     echo
     echo -e "[${g}Info${p}] 更新成功！"
+    state_xray
   else
-    echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}"
+    echo -e "| ${y}xray+caddy${p}  | ${g}${local_version}${p}  (latest)"
   fi
   exit 0
 }
@@ -100,19 +146,11 @@ uninstall_xray() {
 }
 
 info_xray() {
-  uuid=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml | head -n1)
-  domain=$(awk 'NR==1 {print$1}' /usr/local/etc/caddy/Caddyfile)
   xraystatus=$(pgrep xray)
   caddystatus=$(pgrep caddy)
   echo
   [ -z "$xraystatus" ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
   [ -z "$caddystatus" ] && echo -e " caddy运行状态：${r}已停止${p}" || echo -e " caddy运行状态：${g}正在运行${p}"
-  echo
-  echo -e " 分享码："
-  echo -e " ${r}vless://${uuid}@${domain}:443?flow=xtls-rprx-direct&encryption=none&security=xtls&type=tcp&headerType=none${p}"
-  echo
-  echo -e " uuid:"
-  echo -e " ${y}$(xray uuid -i "$uuid")${p}"
 }
 
 action=$1

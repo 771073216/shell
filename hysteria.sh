@@ -66,18 +66,18 @@ dir="/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org
 cer="\${dir}${domain}/${domain}.crt"
 key="\${dir}${domain}/${domain}.key"
 renew_time=\$(stat -c %Y \$cer)
-if [ -e "/root/hysteria/renew" ]; then
-  local_time=\$(cat /root/hysteria/renew)
+if [ -e "/usr/local/share/hysteria/renew" ]; then
+  local_time=\$(cat /usr/local/share/hysteria/renew)
   if [ "\$renew_time" != "\$local_time" ]; then
     echo "updating"
-    rm /root/hysteria/fullchain.cer /root/hysteria/private.key
-    cp \$cer /root/hysteria/fullchain.cer
-    cp \$key /root/hysteria/private.key
-    echo "\$renew_time" > /root/hysteria/renew
+    rm /usr/local/share/hysteria/fullchain.cer /usr/local/share/hysteria/private.key
+    cp \$cer /usr/local/share/hysteria/fullchain.cer
+    cp \$key /usr/local/share/hysteria/private.key
+    echo "\$renew_time" > /usr/local/share/hysteria/renew
         echo "done"
   fi
 else
-  echo "\$renew_time" > /root/hysteria/renew
+  echo "\$renew_time" > /usr/local/share/hysteria/renew
 fi
 EOF
   chmod +x /usr/local/share/hysteria/update.sh
