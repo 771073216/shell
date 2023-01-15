@@ -114,7 +114,7 @@ install_xray() {
   read -r domain
   echo -e -n "[${g}Info${p}] 输入密码： "
   read -r passwd
-  wget -q --show-progress https://raw.githubusercontent.com/771073216/deb/main/xray.deb -O xray.deb
+  curl -L https://raw.githubusercontent.com/771073216/deb/main/xray.deb -o xray.deb
   dpkg -i xray.deb && rm xray.deb
   set_conf
   systemctl restart xray caddy
