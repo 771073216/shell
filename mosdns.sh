@@ -74,7 +74,7 @@ if [ "$select" = 4 ]; then
 fi
 
 if [ "$select" = 5 ]; then
-  mkdir /tmp/mosdns-install /etc/mosdns
+  mkdir /tmp/mosdns-install /etc/mosdns /usr/share/mosdns
   curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-install/mosdns.zip
   curl -L https://raw.githubusercontent.com/IrineSistiana/mosdns/main/scripts/openwrt/mosdns-init-openwrt -o /etc/init.d/mosdns
   unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
