@@ -61,7 +61,7 @@ fi
 if [ "$select" = 4 ]; then
   /etc/init.d/mosdns start
   clean_log
-  port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /addr/{print$3}')
+  port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /listen/{print$3}')
   server=$(uci get dhcp.@dnsmasq[0].server)
   if [ "$server" != "" ]; then
     uci delete dhcp.@dnsmasq[0].server
