@@ -101,10 +101,10 @@ plugins:
   - tag: forward_cn
     type: forward
     args:
+      concurrent: 2
       upstreams:
-        - addr: tls://dot.pub
-          enable_pipeline: true
-          dial_addr: 1.12.12.12
+        - addr: 119.29.29.29
+        - addr: 119.28.28.28
      
   - tag: forward_hk
     type: forward
