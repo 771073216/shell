@@ -3,12 +3,13 @@
 init() {
   sudo apt update -y
   sudo apt full-upgrade -y
-  sudo apt install -y ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential \
+  sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
     bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
     git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev \
     libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz \
-    mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pip qemu-utils \
-    rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+    mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools \
+    libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip \
+    vim wget xmlto xxd zlib1g-dev
   git clone https://github.com/coolsnowwolf/lede.git lede/
   pushd lede/ || exit
   add_feeds
@@ -19,26 +20,40 @@ init() {
   cp "$0" lede/
 }
 
+easy() {
+  sudo apt update -y
+  sudo apt full-upgrade -y
+  sudo apt install -y ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential \
+    bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
+    git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev \
+    libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz \
+    mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pip qemu-utils \
+    rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+  git clone https://github.com/coolsnowwolf/lede.git lede/ --depth=1
+  pushd lede/ || exit
+  add_feeds
+  ./scripts/feeds update -a && ./scripts/feeds install -a
+  modify
+  popd || exit
+  chmod +x "$0"
+  cp "$0" lede/
+}
+
 add_feeds() {
-  sed -i '/src-git passwall/d' feeds.conf.default
-  sed -i '/src-git passwall2/d' feeds.conf.default
   {
     echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git"
     echo "src-git passwall2 https://github.com/xiaorouji/openwrt-passwall2.git"
-  } >> feeds.conf.default
+  } >> feeds.conf
 }
 
 restore() {
   git restore include/target.mk
   git restore target/linux/x86/Makefile
-  git restore package/lean/autocore/files/x86/autocore
-  git restore package/lean/autocore/files/x86/sbin/cpuinfo
-  git restore feeds.conf.default
 }
 
 modify() {
-  include="ddns-scripts_aliyun ddns-scripts_dnspod luci-app-ddns luci-app-upnp luci-app-autoreboot \
-	luci-app-arpbind luci-app-filetransfer luci-app-vsftpd luci-app-ssr-plus luci-app-vlmcsd \
+  include="ddns-scripts_aliyun ddns-scripts_dnspod luci-app-ddns \
+	luci-app-arpbind luci-app-ssr-plus luci-app-vlmcsd \
 	luci-app-accesscontrol luci-app-nlbwmon luci-app-turboacc luci-app-wol"
   for a in $include; do
     sed -i "s/$a//g" include/target.mk
@@ -54,20 +69,11 @@ modify() {
   done
   sed -i '/^[[:space:]]*\\/d' target/linux/x86/Makefile
   sed -i 's|[[:space:]]\{2,\}| |g' target/linux/x86/Makefile
-
-  sed -i 's/^\th=${g}.*/\th=${a}${b}${c}${d}${e}${f}/g' package/lean/autocore/files/x86/autocore
-  sed -i "/TEMP=/d" package/lean/autocore/files/x86/sbin/cpuinfo
-  sed -i "/echo /d" package/lean/autocore/files/x86/sbin/cpuinfo
-  {
-    echo "TEMP=\`sensors 2>/dev/null | grep 'Core 0' | awk -F'[ (+]+' '{print\$3}'\`"
-    echo "echo \"\$MHz MHz Temp: \$TEMP\""
-  } >> package/lean/autocore/files/x86/sbin/cpuinfo
 }
 
 update() {
   restore
   git pull
-  add_feeds
   ./scripts/feeds update -a && ./scripts/feeds install -a
   modify
 }
@@ -113,6 +119,9 @@ case "$action" in
     ;;
   -i | init)
     init
+    ;;
+  -e | easy)
+    easy
     ;;
   *)
     echo "参数错误！ [${action}]"
