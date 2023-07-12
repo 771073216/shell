@@ -51,7 +51,7 @@ info_xray() {
   password=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml)
   privatekey=$(awk -F'"' '/privateKey:/ {print$2}' /usr/local/etc/xray/config.yaml)
   domain=$(awk '/dest:/ {print$2}' /usr/local/etc/xray/config.yaml)
-  publickey=$(./xray x25519 -i "$privatekey" | awk '{print$3}' | tail -n 1)
+  publickey=$(xray x25519 -i "$privatekey" | awk '{print$3}' | tail -n 1)
   echo -e "[password] ${g}$password${p}"
   echo -e "[publickey] ${g}$publickey${p}"
   echo -e "[domain] ${g}$domain${p}"
