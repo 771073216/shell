@@ -19,7 +19,7 @@ install_xray() {
   private_key=$(xray x25519 | awk '{print$3}' | head -n 1)
   sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
   sed -i "s/private_key/$private_key/g" /usr/local/etc/xray/config.yaml
-  sed -i "s/example.com/$domain/g" /usr/local/etc/xray/config.yaml
+  sed -i "s/www.example.com/$domain/g" /usr/local/etc/xray/config.yaml
   systemctl restart xray
   state_xray
   info_xray
@@ -52,11 +52,13 @@ info_xray() {
   privatekey=$(awk -F'"' '/privateKey:/ {print$2}' /usr/local/etc/xray/config.yaml)
   domain=$(awk '/dest:/ {print$2}' /usr/local/etc/xray/config.yaml)
   publickey=$(xray x25519 -i "$privatekey" | awk '{print$3}' | tail -n 1)
+  ip_addr=$(curl ipinfo.io/ip)
   echo -e "[password] ${g}$password${p}"
   echo -e "[publickey] ${g}$publickey${p}"
   echo -e "[domain] ${g}$domain${p}"
   echo -e " 分享码 ："
-  echo -e " ${r}vless://${password}@${domain}:443?type=grpc&security=reality&serviceName=grpc&pbk=${publickey}&mode=gun#reality${p}"
+  echo -e " ${r}vless://${password}@${ip_addr}:443?security=reality&sni=${domain}&fp=chrome&pbk=${publickey}&spx=%2F&type=grpc&serviceName=grpc&mode=gun#reality${p}"
+
 }
 
 state_xray() {
