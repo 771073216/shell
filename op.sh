@@ -42,7 +42,7 @@ easy() {
 
 add_feeds() {
   {
-    echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git"
+    echo "src-git openwrt-passwall-packages https://github.com/xiaorouji/openwrt-passwall-packages.git"
     echo "src-git passwall2 https://github.com/xiaorouji/openwrt-passwall2.git"
   } >> feeds.conf
 }
