@@ -6,10 +6,8 @@ main() {
     install_sing_box
     exit 0
   fi
-
   local_ver=$(sing-box version | awk '/version/{print$3}')
   newer_ver=$(echo -e "${latest_ver}\n${local_ver}" | sort -V | tail -n1)
-
   if [ "$newer_ver" == "$local_ver" ]; then
     echo "sing-box $local_ver is latest version"
   else
@@ -19,12 +17,10 @@ main() {
 
 install_sing_box() {
   ver=$(echo "$latest_ver" | cut -c 2-)
-  wget https://github.com/SagerNet/sing-box/releases/download/"$latest_ver"/sing-box_"$ver"_linux_amd64.deb -O /tmp/sing-box.deb
-  [ -e /tmp/deb_tmp ] && rm /tmp/deb_tmp
-  mkdir /tmp/deb_tmp
-  dpkg -X /tmp/sing-box.deb /tmp/deb_tmp
-  install /tmp/deb_tmp/usr/bin/sing-box /usr/local/bin/
-  rm -r /tmp/deb_tmp /tmp/sing-box.deb
+  wget https://github.com/SagerNet/sing-box/releases/download/"$latest_ver"/sing-box_"$ver"_linux_amd64.tar.gz -O /tmp/sing-box.tar.gz
+  tar -xf /tmp/sing-box.tar.gz -C /tmp/
+  install /tmp/sing-box-"$ver"-linux-amd64/sing-box /usr/local/bin/
+  rm -r /tmp/sing-box-"$ver"-linux-amd64 /tmp/sing-box.tar.gz
 }
 
 main
