@@ -1,6 +1,5 @@
 #!/bin/bash
 latest_ver=$(curl -s https://api.github.com/repos/sagernet/sing-box/tags | awk -F'"' '/name/{print$4}' | sort -n | tail -n1)
-tags="with_reality_server"
 
 main() {
   if ! command -v sing-box > /dev/null; then
@@ -19,8 +18,13 @@ main() {
 }
 
 install_sing_box() {
-  go install -v -tags "${tags}" -ldflags "-s -w -buildid= -X github.com/sagernet/sing-box/constant.Version=${latest_ver}" github.com/sagernet/sing-box/cmd/sing-box@"${latest_ver}"
-  install "${HOME}"/go/bin/sing-box /usr/local/bin/
+  ver=$(echo "$latest_ver" | cut -c 2-)
+  wget https://github.com/SagerNet/sing-box/releases/download/"$latest_ver"/sing-box_"$ver"_linux_amd64.deb -O /tmp/sing-box.deb
+  [ -e /tmp/deb_tmp ] && rm /tmp/deb_tmp
+  mkdir /tmp/deb_tmp
+  dpkg -X /tmp/sing-box.deb /tmp/deb_tmp
+  install /tmp/deb_tmp/usr/bin/sing-box /usr/local/bin/
+  rm -r /tmp/deb_tmp /tmp/sing-box.deb
 }
 
 main
