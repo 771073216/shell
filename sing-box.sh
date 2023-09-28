@@ -23,4 +23,8 @@ install_sing_box() {
   rm -r /tmp/sing-box-"$ver"-linux-amd64 /tmp/sing-box.tar.gz
 }
 
+if [ "$1" == "-f" ]; then
+  install_sing_box
+  exit 0 
+fi
 main
