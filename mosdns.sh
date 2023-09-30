@@ -16,13 +16,19 @@ else
   mosdns_arch="arm64"
 fi
 
+mk_dir() {
+  for i in "$@"; do
+    [ -e "$i" ] || mkdir "$i"
+  done
+}
+
 clean_log() {
   log_file=$(grep -A 3 'log:' /etc/mosdns/config.yaml | awk -F'"' '/file:/{print$2}')
   [ -e "$log_file" ] && rm "$log_file"
 }
 
 dl_mosdns() {
-  mkdir /tmp/mosdns-update
+  mk_dir /tmp/mosdns-update
   curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-update/mosdns.zip
   unzip /tmp/mosdns-update/mosdns.zip mosdns -d /tmp/mosdns-update
   rm /usr/bin/mosdns
@@ -38,13 +44,15 @@ fi
 if [ "$select" = 2 ]; then
   local_ver=$(mosdns version | awk -F"-" '{print$1}')
   remote_ver=$(curl -sSL https://api.github.com/repos/IrineSistiana/mosdns/releases/latest | awk -F'"' '/tag_name/{print$4}')
-  if [ "$local_ver" = "$remote_ver" ]; then
-    return
+  newer_ver=$(printf "%s\n%s" "${remote_ver}" "${local_ver}" | sort -V | tail -n1)
+  if [ "$newer_ver" = "$local_ver" ]; then
+    echo "mosdns $local_ver is latest version"
+  else
+    dl_mosdns
+    echo "$local_ver -> $remote_ver"
+    clean_log
+    /etc/init.d/mosdns restart
   fi
-  dl_mosdns
-  echo "$local_ver -> $remote_ver"
-  clean_log
-  /etc/init.d/mosdns restart
 fi
 
 if [ "$select" = 3 ]; then
@@ -61,8 +69,8 @@ fi
 if [ "$select" = 4 ]; then
   /etc/init.d/mosdns start
   clean_log
-  port=$(grep 127.0.0.1 /etc/mosdns/config.yaml | awk -F':' 'NR==1 && /listen/{print$3}')
-  server=$(uci get dhcp.@dnsmasq[0].server)
+  port=$(awk -F':' '/listen:/{print$3}' /etc/mosdns/config.yaml)
+  server=$(uci get dhcp.@dnsmasq[0].server 2> /dev/null)
   if [ "$server" != "" ]; then
     uci delete dhcp.@dnsmasq[0].server
   fi
@@ -74,7 +82,7 @@ if [ "$select" = 4 ]; then
 fi
 
 if [ "$select" = 5 ]; then
-  mkdir /tmp/mosdns-install /etc/mosdns /usr/share/mosdns
+  mk_dir /tmp/mosdns-install /etc/mosdns /usr/share/mosdns
   curl -L https://github.com/IrineSistiana/mosdns/releases/latest/download/mosdns-linux-${mosdns_arch}.zip -o /tmp/mosdns-install/mosdns.zip
   curl -L https://raw.githubusercontent.com/IrineSistiana/mosdns/main/scripts/openwrt/mosdns-init-openwrt -o /etc/init.d/mosdns
   unzip /tmp/mosdns-install/mosdns.zip mosdns -d /usr/bin/
@@ -101,18 +109,9 @@ plugins:
   - tag: forward_cn
     type: forward
     args:
-      concurrent: 2
       upstreams:
-        - addr: 119.29.29.29
-        - addr: 119.28.28.28
-     
-  - tag: forward_hk
-    type: forward
-    args:
-      upstreams:
-        - addr: tls://1.1.1.1
-          enable_pipeline: true
-
+        - addr: tls://223.5.5.5:853
+        - addr: tls://223.6.6.6:853
           
   - tag: sequence_local
     type: sequence
@@ -122,29 +121,12 @@ plugins:
           - has_resp
         exec: accept
       - exec: \$forward_cn
-      
-  - tag: sequence_remote
-    type: sequence
-    args:
-      - exec: \$cache
-      - matches:
-          - has_resp
-        exec: accept
-      - exec: \$forward_hk
 
-  - tag: server_remote
+  - tag: server_local
     type: udp_server
     args:
       entry: sequence_local
       listen: 127.0.0.1:5335
-      
-  - tag: server_local
-    type: udp_server
-    args:
-      entry: sequence_remote
-      listen: 127.0.0.1:6053
-api:
-    http: "192.168.1.1:8080"
 EOF
 fi
 
