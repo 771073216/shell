@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+set -e
 latest_ver=$(curl -s https://go.dev/dl/ | grep -v -E 'go[0-9\.]+(beta|rc)' | grep -E -o 'go[0-9\.]+' | grep -E -o '[0-9]\.[0-9]+(\.[0-9]+)?' | sort -V | uniq | tail -n1)
 url="https://go.dev/dl/go${latest_ver}.linux-amd64.tar.gz"
+go_dir="/usr/local/go"
 
 main() {
   if ! command -v go > /dev/null; then
@@ -19,15 +21,14 @@ main() {
 }
 
 update_golang() {
-  wget "$url" -O /usr/local/golang-update.tar.gz
-  tar -xf /usr/local/golang-update.tar.gz
-  rm /usr/local/golang-update.tar.gz
+  wget "$url" -O /tmp/golang-update.tar.gz
+  [ -e "$go_dir" ] && rm -r "$go_dir"
+  tar -xf /tmp/golang-update.tar.gz -C /usr/local
+  rm /tmp/golang-update.tar.gz
 }
 
 install_golang() {
-  wget "$url" -O /usr/local/golang-update.tar.gz
-  tar -xf /usr/local/golang-update.tar.gz
-  rm /usr/local/golang-update.tar.gz
+  update_golang
   echo "export PATH=\$PATH:/usr/local/go/bin" >> "${HOME}"/.profile
 }
 
