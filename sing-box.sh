@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-latest_ver=$(curl -s https://api.github.com/repos/sagernet/sing-box/tags | awk -F'"' '/name/{print$4}' | sort -n | tail -n1)
+latest_ver=$(curl -s https://api.github.com/repos/sagernet/sing-box/releases/latest | awk -F'"' '/tag_name/{print$4}' | sort -n | tail -n1 | tr -d v)
 
 main() {
   if ! command -v sing-box > /dev/null; then
@@ -17,16 +17,15 @@ main() {
 }
 
 install_sing_box() {
-  ver=$(echo "$latest_ver" | cut -c 2-)
-  wget https://github.com/SagerNet/sing-box/releases/download/"$latest_ver"/sing-box-"$ver"-linux-amd64.tar.gz -O /tmp/sing-box.tar.gz
+  wget https://github.com/SagerNet/sing-box/releases/download/v"$latest_ver"/sing-box-"$latest_ver"-linux-amd64.tar.gz -O /tmp/sing-box.tar.gz
   tar -xf /tmp/sing-box.tar.gz -C /tmp/
-  install /tmp/sing-box-"$ver"-linux-amd64/sing-box /usr/local/bin/
-  rm -r /tmp/sing-box-"$ver"-linux-amd64 /tmp/sing-box.tar.gz
+  install /tmp/sing-box-"$latest_ver"-linux-amd64/sing-box /usr/local/bin/
+  rm -r /tmp/sing-box-"$latest_ver"-linux-amd64 /tmp/sing-box.tar.gz
 }
 
 if [ "$1" == "-f" ]; then
   install_sing_box
-  exit 0 
+  exit 0
 fi
-main
 
+main
