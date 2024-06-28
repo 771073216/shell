@@ -6,82 +6,139 @@ p='\033[0m'
 
 [[ $EUID -ne 0 ]] && echo -e "[${r}Error${p}] 请以root身份执行该脚本！" && exit 1
 
-install_xray() {
-  if dpkg -l | grep xray > /dev/null; then
-    update_xray
-  fi
-  echo -e -n "[${g}Info${p}] 输入域名： "
-  read -r domain
-  echo -e -n "[${g}Info${p}] 输入密码： "
-  read -r passwd
-  curl -L https://raw.githubusercontent.com/771073216/deb/main/xray.deb -o xray.deb
-  dpkg -i xray.deb && rm xray.deb
+set_conf() {
   private_key=$(xray x25519 | awk '{print$3}' | head -n 1)
-  sed -i "s/passwd/$passwd/g" /usr/local/etc/xray/config.yaml
-  sed -i "s/private_key/$private_key/g" /usr/local/etc/xray/config.yaml
-  sed -i "s/www.example.com/$domain/g" /usr/local/etc/xray/config.yaml
-  systemctl restart xray
-  state_xray
-  info_xray
+  cat > /usr/local/etc/xray/config.json <<- EOF
+{
+    "log": {
+        "loglevel": "info",
+        "access": "/var/log/xray/access.log",
+        "error": "/var/log/xray/error.log"
+    },
+    "routing": {
+        "domainStrategy": "IPIfNonMatch",
+        "rules": [
+            {
+                "type": "field",
+                "ip": [
+                    "geoip:cn",
+                    "geoip:private"
+                ],
+                "outboundTag": "block"
+            }
+        ]
+    },
+    "inbounds": [
+        {
+            "listen": "0.0.0.0",
+            "port": 443,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "password",
+                        "flow": ""
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "grpc",
+                "security": "reality",
+                "realitySettings": {
+                    "show": false,
+                    "dest": "www.example.com:443",
+                    "xver": 0,
+                    "serverNames": [
+                        "www.example.com"
+                    ],
+                    "privateKey": "${private_key}",
+                    "shortIds": [
+                        ""
+                    ]
+                },
+                "grpcSettings": {
+                    "serviceName": "grpc"
+                }
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "tag": "direct"
+        },
+        {
+            "protocol": "blackhole",
+            "tag": "block"
+        }
+    ]
+}
+EOF
 }
 
-update_xray() {
-  remote_version=$(curl -sSL "https://raw.githubusercontent.com/771073216/deb/main/version" | awk '/xray/{print$2}')
-  local_version=$(dpkg -s xray | awk '/Version/ {print$2}')
-  if ! [ "${remote_version}" == "${local_version}" ]; then
-    echo -e "| ${y}xray${p}  | ${r}${local_version}${p} --> ${g}${remote_version}${p}"
-    curl -L https://raw.githubusercontent.com/771073216/deb/main/xray.deb -o xray.deb
-    dpkg -i --force-confold xray.deb && rm xray.deb
-    echo
-    echo -e "[${g}Info${p}] 更新成功！"
-    state_xray
-  else
-    echo -e "| ${y}xray${p}  | ${g}${local_version}${p}  (latest)"
+set_service() {
+  cat > /etc/systemd/system/xray.service <<- EOF
+[Unit]
+Description=Xray Service
+Documentation=https://github.com/xtls
+After=network.target nss-lookup.target
+[Service]
+DynamicUser=1
+LogsDirectory=xray
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/xray run -c /usr/local/etc/xray/config.json
+Restart=on-failure
+RestartPreventExitStatus=23
+LimitNPROC=10000
+LimitNOFILE=1000000
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+install() {
+  if command -v xray; then
+    update
+    exit 0
   fi
-  exit 0
+  mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/
+  set_service
+  set_conf
+  wget -q --show-progress https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -O /tmp/xray.zip
+  unzip /tmp/xray.zip xray -d /usr/local/bin
+  chmod +x /usr/local/bin/xray
 }
 
-uninstall_xray() {
+update() {
+  latest_version=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/releases/latest | awk -F '"' '/tag_name/ {print $4}')
+  local_version=$(/usr/local/bin/xray version | awk 'NR==1 {print "v"$2}')
+  [ "$latest_version" == "$local_version" ] && echo "no update" && exit 0
+  wget -q --show-progress https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -O /tmp/xray.zip
+  unzip /tmp/xray.zip xray -d /usr/local/bin
+  chmod +x /usr/local/bin/xray
+  systemctl restart xray
+}
+
+uninstall() {
   echo -e "[${g}Info${p}] 正在卸载${y}xray${p}..."
-  dpkg --purge xray
+  systemctl disable xray --now
+  rm -f /usr/local/bin/xray
+  rm -rf /usr/local/etc/xray/
+  rm -f /etc/systemd/system/xray.service
   echo -e "[${g}Info${p}] 卸载成功！"
-}
-
-info_xray() {
-  password=$(awk -F'"' '/id:/ {print$2}' /usr/local/etc/xray/config.yaml)
-  privatekey=$(awk -F'"' '/privateKey:/ {print$2}' /usr/local/etc/xray/config.yaml)
-  domain=$(awk '/dest:/ {print$2}' /usr/local/etc/xray/config.yaml)
-  publickey=$(xray x25519 -i "$privatekey" | awk '{print$3}' | tail -n 1)
-  ip_addr=$(curl ipinfo.io/ip)
-  echo -e "[password] ${g}$password${p}"
-  echo -e "[publickey] ${g}$publickey${p}"
-  echo -e "[domain] ${g}$domain${p}"
-  echo -e " 分享码 ："
-  echo -e " ${r}vless://${password}@${ip_addr}:443?security=reality&sni=${domain}&fp=chrome&pbk=${publickey}&spx=%2F&type=grpc&serviceName=grpc&mode=gun#reality${p}"
-
-}
-
-state_xray() {
-  xraystatus=$(pgrep xray)
-  echo
-  [ -z "$xraystatus" ] && echo -e " xray运行状态：${r}已停止${p}" || echo -e " xray运行状态：${g}正在运行${p}"
-  echo
 }
 
 action=$1
 [ -z "$1" ] && action=install
 case "$action" in
-  install)
-    install_xray
-    ;;
-  -i)
-    info_xray
-    ;;
-  -u)
-    uninstall_xray
+  install | uninstall)
+    "${action}"
     ;;
   *)
     echo "参数错误！ [${action}]"
-    echo "使用方法：$(basename "$0") [install|-u uninstall|-i info]"
+    echo "使用方法：$(basename "$0") [install|uninstall]"
     ;;
 esac
