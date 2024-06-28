@@ -108,7 +108,7 @@ install() {
   set_service
   set_conf
   curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o /tmp/xray.zip
-  unzip /tmp/xray.zip xray -d /usr/local/bin
+  unzip -o /tmp/xray.zip xray -d /usr/local/bin
   chmod +x /usr/local/bin/xray
 }
 
@@ -117,7 +117,7 @@ update() {
   local_version=$(/usr/local/bin/xray version | awk 'NR==1 {print "v"$2}')
   [ "$latest_version" == "$local_version" ] && echo "no update" && exit 0
   curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o /tmp/xray.zip
-  unzip /tmp/xray.zip xray -d /usr/local/bin
+  unzip -o /tmp/xray.zip xray -d /usr/local/bin
   chmod +x /usr/local/bin/xray
   systemctl restart xray
 }
