@@ -107,16 +107,16 @@ install() {
   mkdir -p /usr/local/etc/xray/ /usr/local/share/xray/
   set_service
   set_conf
-  wget -q --show-progress https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -O /tmp/xray.zip
+  curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o /tmp/xray.zip
   unzip /tmp/xray.zip xray -d /usr/local/bin
   chmod +x /usr/local/bin/xray
 }
 
 update() {
-  latest_version=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/releases/latest | awk -F '"' '/tag_name/ {print $4}')
+  latest_version=$(curl -sSL https://api.github.com/repos/XTLS/Xray-core/releases/latest | awk -F '"' '/tag_name/ {print $4}')
   local_version=$(/usr/local/bin/xray version | awk 'NR==1 {print "v"$2}')
   [ "$latest_version" == "$local_version" ] && echo "no update" && exit 0
-  wget -q --show-progress https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -O /tmp/xray.zip
+  curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o /tmp/xray.zip
   unzip /tmp/xray.zip xray -d /usr/local/bin
   chmod +x /usr/local/bin/xray
   systemctl restart xray
